@@ -90,9 +90,14 @@ foreach ($routes as $routePattern => $controllerAction) {
 
     // Dynamic replacement match
     // Simple custom regex compiler to handle dynamic placeholders
-    $regex = '^' . preg_quote($routePattern, '#') . '$';
-    $regex = str_replace('\([^/]+\)', '([^/]+)', $regex);
-    $regex = str_replace('\([0-9]+\)', '([0-9]+)', $regex);
+    $regex = $routePattern;
+    $regex = str_replace('([^/]+)', '__PARAM__', $regex);
+    $regex = str_replace('([0-9]+)', '__NUM__', $regex);
+    
+    $regex = preg_quote($regex, '#');
+    
+    $regex = str_replace('__PARAM__', '([^/]+)', $regex);
+    $regex = str_replace('__NUM__', '([0-9]+)', $regex);
     $regex = '#^' . $regex . '$#';
 
     if (preg_match($regex, $routeKey, $matches)) {

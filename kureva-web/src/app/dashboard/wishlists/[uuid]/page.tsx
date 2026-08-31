@@ -268,13 +268,13 @@ export default function WishlistDetailPage({ params }: { params: Promise<{ uuid:
                 <Edit2 className="w-4 h-4" />
                 <span className="text-xs font-medium">Settings</span>
               </button>
-              <button
-                onClick={() => setIsAddItemOpen(true)}
+              <Link
+                href={`/dashboard/wishes/new?wishlist=${wishlist.uuid}`}
                 className="flex items-center space-x-1.5 px-4 py-2 bg-accent text-white rounded text-sm hover:bg-accent-dark transition-all duration-200 font-medium"
               >
                 <Plus className="w-4 h-4" />
                 <span>Add Wish</span>
-              </button>
+              </Link>
             </div>
           </div>
 
@@ -286,12 +286,12 @@ export default function WishlistDetailPage({ params }: { params: Promise<{ uuid:
               <p className="text-xs text-secondary mb-6 leading-relaxed font-light px-6">
                 Maybe there is something you&apos;ve been quietly wanting. Add details manually or import via URL.
               </p>
-              <button
-                onClick={() => setIsAddItemOpen(true)}
-                className="px-5 py-2 bg-accent text-white rounded text-sm hover:bg-accent-dark transition-colors font-medium"
+              <Link
+                href={`/dashboard/wishes/new?wishlist=${wishlist.uuid}`}
+                className="px-5 py-2 bg-accent text-white rounded text-sm hover:bg-accent-dark transition-colors font-medium inline-block"
               >
                 Add your first item
-              </button>
+              </Link>
             </div>
           ) : (
             <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6">
@@ -485,189 +485,7 @@ export default function WishlistDetailPage({ params }: { params: Promise<{ uuid:
             </div>
           )}
 
-          {/* Add Item Modal */}
-          {isAddItemOpen && (
-            <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-primary/20 backdrop-blur-sm overflow-y-auto">
-              <div className="bg-white rounded-lg border border-border max-w-lg w-full p-6 relative my-8">
-                <button
-                  onClick={() => setIsAddItemOpen(false)}
-                  className="absolute top-4 right-4 text-secondary hover:text-primary"
-                >
-                  <X className="w-5 h-5" />
-                </button>
-                <h3 className="text-lg font-normal text-primary font-editorial mb-4">
-                  Add something you love
-                </h3>
 
-                {/* Import section */}
-                <div className="mb-6 p-4 bg-soft rounded-lg border border-border/50">
-                  <label className="block text-[11px] font-semibold text-secondary uppercase tracking-wider mb-1">
-                    Paste product link (Jumia, Amazon, Shopify, etc.)
-                  </label>
-                  <div className="flex gap-2">
-                    <input
-                      type="url"
-                      placeholder="https://www.jumia.com/..."
-                      className="flex-grow px-3 py-2 border border-border rounded text-sm focus:outline-none focus:border-accent"
-                      value={importUrl}
-                      onChange={(e) => setImportUrl(e.target.value)}
-                    />
-                    <button
-                      type="button"
-                      disabled={importingUrl}
-                      onClick={handleUrlPreview}
-                      className="px-4 py-2 border border-accent text-accent font-medium rounded text-xs hover:bg-accent/5 transition-colors disabled:opacity-50"
-                    >
-                      {importingUrl ? "Parsing..." : "Auto Fill"}
-                    </button>
-                  </div>
-                  {importError && (
-                    <p className="text-[11px] text-amber-600 mt-1.5 flex items-center gap-1 font-light">
-                      <AlertCircle className="w-3.5 h-3.5" />
-                      <span>{importError}</span>
-                    </p>
-                  )}
-                </div>
-
-                <form onSubmit={handleAddItem} className="space-y-4">
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                    <div className="sm:col-span-2">
-                      <label className="block text-[11px] font-semibold text-secondary uppercase tracking-wider mb-1">
-                        Product Name *
-                      </label>
-                      <input
-                        type="text"
-                        required
-                        placeholder="Sony WH-1000XM4 Headphones"
-                        className="w-full px-3 py-2 border border-border rounded text-sm focus:outline-none focus:border-accent"
-                        value={itemName}
-                        onChange={(e) => setItemName(e.target.value)}
-                      />
-                    </div>
-
-                    <div>
-                      <label className="block text-[11px] font-semibold text-secondary uppercase tracking-wider mb-1">
-                        Price
-                      </label>
-                      <input
-                        type="number"
-                        step="0.01"
-                        placeholder="249.99"
-                        className="w-full px-3 py-2 border border-border rounded text-sm focus:outline-none focus:border-accent"
-                        value={itemPrice}
-                        onChange={(e) => setItemPrice(e.target.value)}
-                      />
-                    </div>
-
-                    <div>
-                      <label className="block text-[11px] font-semibold text-secondary uppercase tracking-wider mb-1">
-                        Currency
-                      </label>
-                      <select
-                        className="w-full px-3 py-2 border border-border rounded text-sm focus:outline-none focus:border-accent bg-white"
-                        value={itemCurrency}
-                        onChange={(e) => setItemCurrency(e.target.value)}
-                      >
-                        <option value="USD">USD ($)</option>
-                        <option value="EUR">EUR (€)</option>
-                        <option value="GBP">GBP (£)</option>
-                        <option value="JPY">JPY (¥)</option>
-                        <option value="NGN">NGN (₦)</option>
-                      </select>
-                    </div>
-
-                    <div>
-                      <label className="block text-[11px] font-semibold text-secondary uppercase tracking-wider mb-1">
-                        Store Name
-                      </label>
-                      <input
-                        type="text"
-                        placeholder="Jumia, Amazon"
-                        className="w-full px-3 py-2 border border-border rounded text-sm focus:outline-none focus:border-accent"
-                        value={itemStore}
-                        onChange={(e) => setItemStore(e.target.value)}
-                      />
-                    </div>
-
-                    <div>
-                      <label className="block text-[11px] font-semibold text-secondary uppercase tracking-wider mb-1">
-                        Quantity
-                      </label>
-                      <input
-                        type="number"
-                        min="1"
-                        required
-                        className="w-full px-3 py-2 border border-border rounded text-sm focus:outline-none focus:border-accent"
-                        value={itemQuantity}
-                        onChange={(e) => setItemQuantity(e.target.value)}
-                      />
-                    </div>
-
-                    <div className="sm:col-span-2">
-                      <label className="block text-[11px] font-semibold text-secondary uppercase tracking-wider mb-1">
-                        Product URL
-                      </label>
-                      <input
-                        type="url"
-                        placeholder="https://..."
-                        className="w-full px-3 py-2 border border-border rounded text-sm focus:outline-none focus:border-accent"
-                        value={itemUrl}
-                        onChange={(e) => setItemUrl(e.target.value)}
-                      />
-                    </div>
-
-                    <div className="sm:col-span-2">
-                      <label className="block text-[11px] font-semibold text-secondary uppercase tracking-wider mb-1">
-                        Image URL
-                      </label>
-                      <input
-                        type="url"
-                        placeholder="https://..."
-                        className="w-full px-3 py-2 border border-border rounded text-sm focus:outline-none focus:border-accent"
-                        value={itemImage}
-                        onChange={(e) => setItemImage(e.target.value)}
-                      />
-                    </div>
-
-                    <div className="sm:col-span-2">
-                      <label className="block text-[11px] font-semibold text-secondary uppercase tracking-wider mb-1">
-                        Notes / Why you want it
-                      </label>
-                      <textarea
-                        placeholder="Add sizing, color preferences, or other notes..."
-                        className="w-full px-3 py-2 border border-border rounded text-sm h-20 focus:outline-none focus:border-accent resize-none"
-                        value={itemNotes}
-                        onChange={(e) => setItemNotes(e.target.value)}
-                      />
-                    </div>
-
-                    <div className="sm:col-span-2">
-                      <label className="block text-[11px] font-semibold text-secondary uppercase tracking-wider mb-1">
-                        Priority
-                      </label>
-                      <select
-                        className="w-full px-3 py-2 border border-border rounded text-sm focus:outline-none focus:border-accent bg-white"
-                        value={itemPriority}
-                        onChange={(e) => setItemPriority(e.target.value)}
-                      >
-                        <option value="nice_to_have">Nice to have</option>
-                        <option value="really_want">Really want</option>
-                        <option value="must_have">Must have! 🔥</option>
-                      </select>
-                    </div>
-                  </div>
-
-                  <button
-                    type="submit"
-                    disabled={addingItem}
-                    className="w-full py-2.5 mt-2 bg-accent text-white font-medium rounded hover:bg-accent-dark transition-colors text-sm disabled:opacity-50"
-                  >
-                    {addingItem ? "Saving..." : "Add to collection"}
-                  </button>
-                </form>
-              </div>
-            </div>
-          )}
         </main>
       </div>
 

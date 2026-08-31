@@ -12,7 +12,6 @@ export default function Navbar() {
   const navItems = [
     { label: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
     { label: "Wishlists", href: "/dashboard/wishlists", icon: List },
-    { label: "Occasions", href: "/dashboard/occasions", icon: Calendar },
   ];
 
   if (!user) return null;

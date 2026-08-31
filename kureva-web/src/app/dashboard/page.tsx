@@ -13,7 +13,6 @@ export default function Dashboard() {
   const router = useRouter();
   const { user, loading: authLoading } = useAuth();
   const [wishlists, setWishlists] = useState<any[]>([]);
-  const [occasions, setOccasions] = useState<any[]>([]);
   const [loadingData, setLoadingData] = useState(true);
 
   // New Wishlist Modal States
@@ -24,19 +23,6 @@ export default function Dashboard() {
   const [wishlistCoverImage, setWishlistCoverImage] = useState("");
   const [submittingWishlist, setSubmittingWishlist] = useState(false);
   const [wishlistError, setWishlistError] = useState("");
-
-  // New Occasion Modal States
-  const [isOccasionModalOpen, setIsOccasionModalOpen] = useState(false);
-  const [occasionName, setOccasionName] = useState("");
-  const [occasionType, setOccasionType] = useState("birthday");
-  const [occasionDate, setOccasionDate] = useState("");
-  const [occasionDescription, setOccasionDescription] = useState("");
-  const [occasionLocation, setOccasionLocation] = useState("");
-  const [occasionCoverImage, setOccasionCoverImage] = useState("");
-  const [occasionVisibility, setOccasionVisibility] = useState("private");
-  const [selectedWishlists, setSelectedWishlists] = useState<string[]>([]);
-  const [submittingOccasion, setSubmittingOccasion] = useState(false);
-  const [occasionError, setOccasionError] = useState("");
 
   // Quick Add States
   const [isQuickAddOpen, setIsQuickAddOpen] = useState(false);
@@ -126,9 +112,7 @@ export default function Dashboard() {
   const fetchData = async () => {
     try {
       const resW = await apiRequest("/api/wishlists");
-      const resO = await apiRequest("/api/occasions");
       if (resW.success) setWishlists(resW.data || []);
-      if (resO.success) setOccasions(resO.data || []);
     } catch (e) {
       console.error(e);
     } finally {
@@ -173,52 +157,6 @@ export default function Dashboard() {
       setWishlistError(err.message || "Failed to create wishlist.");
     } finally {
       setSubmittingWishlist(false);
-    }
-  };
-
-  const handleCreateOccasion = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setOccasionError("");
-    setSubmittingOccasion(true);
-
-    try {
-      const res = await apiRequest("/api/occasions", {
-        method: "POST",
-        data: {
-          name: occasionName,
-          type: occasionType,
-          date: occasionDate,
-          description: occasionDescription,
-          location: occasionLocation,
-          cover_image: occasionCoverImage,
-          visibility: occasionVisibility,
-          wishlist_ids: selectedWishlists,
-        },
-      });
-      if (res.success) {
-        setIsOccasionModalOpen(false);
-        setOccasionName("");
-        setOccasionType("birthday");
-        setOccasionDate("");
-        setOccasionDescription("");
-        setOccasionLocation("");
-        setOccasionCoverImage("");
-        setOccasionVisibility("private");
-        setSelectedWishlists([]);
-        fetchData();
-      }
-    } catch (err: any) {
-      setOccasionError(err.message || "Failed to create occasion.");
-    } finally {
-      setSubmittingOccasion(false);
-    }
-  };
-
-  const toggleWishlistSelection = (uuid: string) => {
-    if (selectedWishlists.includes(uuid)) {
-      setSelectedWishlists(selectedWishlists.filter((id) => id !== uuid));
-    } else {
-      setSelectedWishlists([...selectedWishlists, uuid]);
     }
   };
 
@@ -337,13 +275,6 @@ export default function Dashboard() {
                 <Plus className="w-4 h-4" />
                 <span>New Wishlist</span>
               </Link>
-              <Link
-                href="/dashboard/occasions/new"
-                className="flex items-center space-x-1.5 px-4 py-2 bg-accent text-white rounded text-sm hover:bg-accent-dark transition-colors font-medium"
-              >
-                <Plus className="w-4 h-4" />
-                <span>New Occasion</span>
-              </Link>
             </div>
           </div>
 
@@ -403,68 +334,6 @@ export default function Dashboard() {
                     </div>
                   )}
                 </div>
-
-                {/* Occasions Section */}
-                <div>
-                  <div className="flex items-center justify-between border-b border-border pb-3 mb-4">
-                    <h2 className="text-sm font-semibold tracking-wider text-secondary uppercase flex items-center space-x-2">
-                      <Calendar className="w-4 h-4 text-accent" />
-                      <span>Upcoming Occasions</span>
-                    </h2>
-                    <Link
-                      href="/dashboard/occasions"
-                      className="text-xs text-accent hover:underline font-medium"
-                    >
-                      View all ({occasions.length})
-                    </Link>
-                  </div>
-
-                  {occasions.length === 0 ? (
-                    <div className="border border-dashed border-border rounded-lg p-8 text-center bg-soft">
-                      <p className="text-sm text-secondary font-light">No occasions on the calendar.</p>
-                      <Link
-                        href="/dashboard/occasions"
-                        className="text-xs text-accent hover:underline mt-2 inline-block font-medium"
-                      >
-                        Add an occasion
-                      </Link>
-                    </div>
-                  ) : (
-                    <div className="space-y-3">
-                      {occasions.slice(0, 3).map((o) => {
-                        const isUpcoming = o.days_until >= 0;
-                        return (
-                          <Link
-                            key={o.uuid}
-                            href={`/dashboard/occasions/${o.uuid}`}
-                            className="flex items-center justify-between p-4 border border-border rounded-lg hover:border-accent hover:shadow-sm transition-all duration-200"
-                          >
-                            <div>
-                              <h3 className="font-medium text-primary text-sm">{o.name}</h3>
-                              <p className="text-xs text-secondary mt-0.5 font-light">
-                                {new Date(o.date).toLocaleDateString("en-US", {
-                                  month: "long",
-                                  day: "numeric",
-                                  year: "numeric",
-                                })}
-                              </p>
-                            </div>
-                            <div className="text-right">
-                              {isUpcoming ? (
-                                <span className="text-xs font-semibold text-accent bg-accent/5 px-2.5 py-1 rounded-full">
-                                  {o.days_until === 0 ? "Today" : `${o.days_until} days left`}
-                                </span>
-                              ) : (
-                                <span className="text-xs text-secondary bg-soft px-2.5 py-1 rounded-full">
-                                  Passed
-                                </span>
-                              )}
-                            </div>
-                          </Link>
-                        );
-                      })}
-                    </div>
-                  )}
                 </div>
               </div>
 
@@ -482,12 +351,6 @@ export default function Dashboard() {
                         {wishlists.length}
                       </span>
                       <span className="text-xs text-secondary block font-light">Total Wishlists</span>
-                    </div>
-                    <div>
-                      <span className="text-3xl font-light text-primary font-editorial">
-                        {occasions.length}
-                      </span>
-                      <span className="text-xs text-secondary block font-light">Upcoming Celebrations</span>
                     </div>
                   </div>
                 </div>

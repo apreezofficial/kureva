@@ -16,7 +16,6 @@ export default function PublicProfilePage({ params }: { params: Promise<{ userna
 
   const [profile, setProfile] = useState<any>(null);
   const [wishlists, setWishlists] = useState<any[]>([]);
-  const [occasions, setOccasions] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
 
@@ -27,7 +26,6 @@ export default function PublicProfilePage({ params }: { params: Promise<{ userna
         if (res.success && res.data) {
           setProfile(res.data.profile);
           setWishlists(res.data.wishlists || []);
-          setOccasions(res.data.occasions || []);
         }
       } catch (err: any) {
         setError(err.message || "Failed to load user profile.");
@@ -87,82 +85,38 @@ export default function PublicProfilePage({ params }: { params: Promise<{ userna
             )}
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-12">
-            {/* Wishlists Column */}
-            <div className="md:col-span-2 space-y-6">
-              <h2 className="text-xs font-semibold tracking-wider text-secondary uppercase flex items-center space-x-2 border-b border-border/60 pb-2">
-                <Gift className="w-4 h-4 text-accent" />
-                <span>Public Wishlists</span>
-              </h2>
+          <div className="space-y-6">
+            <h2 className="text-xs font-semibold tracking-wider text-secondary uppercase flex items-center space-x-2 border-b border-border/60 pb-2">
+              <Gift className="w-4 h-4 text-accent" />
+              <span>Public Wishlists</span>
+            </h2>
 
-              {wishlists.length === 0 ? (
-                <p className="text-xs text-secondary font-light italic">No public wishlists listed.</p>
-              ) : (
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  {wishlists.map((w) => (
-                    <NextLink
-                      key={w.uuid}
-                      href={`/w/${w.uuid}`}
-                      className="group border border-border rounded-lg p-5 hover:border-accent transition-all duration-200 bg-white"
-                    >
-                      <h3 className="font-medium text-primary text-base group-hover:text-accent transition-colors leading-snug">
-                        {w.name}
-                      </h3>
-                      {w.description && (
-                        <p className="text-xs text-secondary mt-1.5 line-clamp-2 font-light leading-relaxed">
-                          {w.description}
-                        </p>
-                      )}
-                      <div className="flex items-center justify-between mt-4 text-[10px] text-secondary font-light">
-                        <span>{w.items_count || 0} wishes</span>
-                        <span className="text-accent font-semibold group-hover:underline">View wishes →</span>
-                      </div>
-                    </NextLink>
-                  ))}
-                </div>
-              )}
-            </div>
-
-            {/* Occasions Column */}
-            <div className="space-y-6">
-              <h2 className="text-xs font-semibold tracking-wider text-secondary uppercase flex items-center space-x-2 border-b border-border/60 pb-2">
-                <Calendar className="w-4 h-4 text-accent" />
-                <span>Public Occasions</span>
-              </h2>
-
-              {occasions.length === 0 ? (
-                <p className="text-xs text-secondary font-light italic">No public celebrations scheduled.</p>
-              ) : (
-                <div className="space-y-4">
-                  {occasions.map((o) => {
-                    const daysLeft = o.days_until;
-                    const isUpcoming = daysLeft >= 0;
-
-                    return (
-                      <NextLink
-                        key={o.uuid}
-                        href={`/o/${o.uuid}`}
-                        className="block border border-border rounded-lg p-4 hover:border-accent transition-colors bg-white"
-                      >
-                        <h3 className="font-medium text-primary text-sm line-clamp-1">{o.name}</h3>
-                        <p className="text-[10px] text-secondary mt-0.5 font-light">
-                          {new Date(o.date).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}
-                        </p>
-                        <div className="mt-3 text-right">
-                          {isUpcoming ? (
-                            <span className="text-[10px] font-semibold text-accent bg-accent/5 px-2 py-0.5 rounded-full">
-                              {daysLeft === 0 ? "Today" : `${daysLeft} days left`}
-                            </span>
-                          ) : (
-                            <span className="text-[10px] text-secondary bg-soft px-2 py-0.5 rounded-full">Passed</span>
-                          )}
-                        </div>
-                      </NextLink>
-                    );
-                  })}
-                </div>
-              )}
-            </div>
+            {wishlists.length === 0 ? (
+              <p className="text-xs text-secondary font-light italic">No public wishlists listed.</p>
+            ) : (
+              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6">
+                {wishlists.map((w) => (
+                  <NextLink
+                    key={w.uuid}
+                    href={`/w/${w.uuid}`}
+                    className="group border border-border rounded-lg p-5 hover:border-accent transition-all duration-200 bg-white"
+                  >
+                    <h3 className="font-medium text-primary text-base group-hover:text-accent transition-colors leading-snug">
+                      {w.name}
+                    </h3>
+                    {w.description && (
+                      <p className="text-xs text-secondary mt-1.5 line-clamp-2 font-light leading-relaxed">
+                        {w.description}
+                      </p>
+                    )}
+                    <div className="flex items-center justify-between mt-4 text-[10px] text-secondary font-light">
+                      <span>{w.items_count || 0} wishes</span>
+                      <span className="text-accent font-semibold group-hover:underline">View wishes →</span>
+                    </div>
+                  </NextLink>
+                ))}
+              </div>
+            )}
           </div>
         </main>
       </div>

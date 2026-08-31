@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useRef, useCallback } from "react";
+import { useEffect, useState, useRef, useCallback, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { useAuth } from "@/lib/auth";
@@ -22,7 +22,7 @@ import {
   ChevronUp
 } from "lucide-react";
 
-export default function NewWishPage() {
+function NewWishForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const { user, loading: authLoading } = useAuth();
@@ -563,3 +563,26 @@ export default function NewWishPage() {
     </div>
   );
 }
+
+export default function NewWishPage() {
+  return (
+    <Suspense
+      fallback={
+        <div className="min-h-screen bg-[#fafaf9] flex flex-col justify-between">
+          <div>
+            <Navbar />
+            <div className="max-w-xl mx-auto px-6 py-10 space-y-6">
+              <div className="h-6 w-32 bg-gray-200 rounded animate-pulse"></div>
+              <div className="h-10 w-64 bg-gray-200 rounded animate-pulse"></div>
+              <div className="h-64 w-full bg-white border border-border rounded-xl animate-pulse"></div>
+            </div>
+          </div>
+          <MobileNav />
+        </div>
+      }
+    >
+      <NewWishForm />
+    </Suspense>
+  );
+}
+

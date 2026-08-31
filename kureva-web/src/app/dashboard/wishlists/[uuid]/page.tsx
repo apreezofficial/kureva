@@ -121,13 +121,13 @@ export default function WishlistDetailPage({ params }: { params: Promise<{ uuid:
             </div>
 
             <div className="flex flex-wrap gap-2.5">
-              <button
-                onClick={handleCopyLink}
+              <Link
+                href={`/dashboard/wishlists/${uuid}/share`}
                 className="flex items-center space-x-1.5 px-3.5 py-2 border border-border rounded-lg text-sm text-secondary hover:text-primary hover:bg-white transition-all duration-200 bg-white/60 shadow-sm"
               >
-                {copied ? <Check className="w-4 h-4 text-accent" /> : <Share2 className="w-4 h-4" />}
-                <span className="text-xs font-medium">{copied ? "Copied" : "Copy Link"}</span>
-              </button>
+                <Share2 className="w-4 h-4 text-emerald-600" />
+                <span className="text-xs font-medium">Share</span>
+              </Link>
               
               {/* Settings Page Link */}
               <Link

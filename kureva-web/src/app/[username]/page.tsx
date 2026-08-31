@@ -38,8 +38,20 @@ export default function PublicProfilePage({ params }: { params: Promise<{ userna
 
   if (loading) {
     return (
-      <div className="min-h-screen flex justify-center items-center bg-soft">
-        <p className="text-sm text-secondary font-light">Opening profile...</p>
+      <div className="min-h-screen bg-[#fafaf9] flex flex-col justify-between">
+        <div>
+          <div className="mx-auto max-w-5xl px-6 py-12 flex flex-col items-center text-center">
+            <div className="w-20 h-20 bg-gray-200 rounded-full animate-pulse mb-4"></div>
+            <div className="h-6 w-32 bg-gray-200 rounded animate-pulse mb-2"></div>
+            <div className="h-4 w-24 bg-gray-100 rounded animate-pulse mb-6"></div>
+            <div className="h-10 w-full max-w-lg bg-gray-100/50 rounded-lg animate-pulse mb-12"></div>
+            <div className="w-full grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6">
+              <div className="h-40 bg-white border border-border/60 rounded-lg animate-pulse"></div>
+              <div className="h-40 bg-white border border-border/60 rounded-lg animate-pulse"></div>
+              <div className="h-40 bg-white border border-border/60 rounded-lg animate-pulse"></div>
+            </div>
+          </div>
+        </div>
       </div>
     );
   }

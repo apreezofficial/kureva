@@ -185,8 +185,21 @@ export default function WishlistDetailPage({ params }: { params: Promise<{ uuid:
 
   if (authLoading || loading) {
     return (
-      <div className="min-h-screen flex justify-center items-center">
-        <p className="text-sm text-secondary">Loading wishlist...</p>
+      <div className="min-h-screen bg-white flex flex-col justify-between">
+        <div>
+          <Navbar />
+          <div className="max-w-5xl mx-auto px-6 py-10 space-y-6">
+            <div className="h-6 w-32 bg-gray-100 rounded animate-pulse"></div>
+            <div className="h-10 w-64 bg-gray-100 rounded animate-pulse"></div>
+            <div className="h-24 w-full bg-gray-50 rounded animate-pulse border border-border/40"></div>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+              <div className="h-48 bg-gray-50 rounded-lg animate-pulse border border-border/40"></div>
+              <div className="h-48 bg-gray-50 rounded-lg animate-pulse border border-border/40"></div>
+              <div className="h-48 bg-gray-50 rounded-lg animate-pulse border border-border/40"></div>
+            </div>
+          </div>
+        </div>
+        <MobileNav />
       </div>
     );
   }

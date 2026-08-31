@@ -76,8 +76,20 @@ export default function PublicWishlistPage({ params }: { params: Promise<{ uuid:
 
   if (loading) {
     return (
-      <div className="min-h-screen flex justify-center items-center bg-soft">
-        <p className="text-sm text-secondary font-light">Reading wishlist details...</p>
+      <div className="min-h-screen bg-[#fafaf9] flex flex-col justify-between">
+        <div>
+          <div className="h-48 md:h-64 bg-gray-100 animate-pulse w-full"></div>
+          <div className="mx-auto max-w-5xl px-6 py-10 space-y-6">
+            <div className="h-10 w-2/3 bg-gray-200 rounded animate-pulse"></div>
+            <div className="h-4 w-1/3 bg-gray-100 rounded animate-pulse"></div>
+            <div className="h-24 w-full bg-white border border-border/60 rounded-xl animate-pulse"></div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6">
+              <div className="h-64 bg-white border border-border/60 rounded-xl animate-pulse"></div>
+              <div className="h-64 bg-white border border-border/60 rounded-xl animate-pulse"></div>
+              <div className="h-64 bg-white border border-border/60 rounded-xl animate-pulse"></div>
+            </div>
+          </div>
+        </div>
       </div>
     );
   }

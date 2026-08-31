@@ -1,8 +1,7 @@
 "use client";
 
 import { useEffect, useState, use } from "react";
-import Link from "next/view-transitions" // wait, standard Link is fine
-import NextLink from "next/link";
+import Link, { default as NextLink } from "next/link";
 import { apiRequest } from "@/lib/api";
 import { Gift, Calendar, ArrowLeft, ArrowRight, User } from "lucide-react";
 

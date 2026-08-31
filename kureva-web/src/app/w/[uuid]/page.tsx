@@ -3,7 +3,7 @@
 import { useEffect, useState, use } from "react";
 import Link from "next/link";
 import { apiRequest } from "@/lib/api";
-import { ExternalLink, Gift, Heart, HelpCircle, Check, ArrowLeft } from "lucide-react";
+import { ExternalLink, Gift, Heart, HelpCircle, Check, ArrowLeft, X } from "lucide-react";
 
 export default function PublicWishlistPage({ params }: { params: Promise<{ uuid: string }> }) {
   const resolvedParams = use(params);

@@ -55,8 +55,9 @@ $routes = [
     'PATCH:/api/wishlists/([^/]+)/items/([0-9]+)' => ['Kureva\Controllers\WishlistController', 'updateItem'],
     'DELETE:/api/wishlists/([^/]+)/items/([0-9]+)' => ['Kureva\Controllers\WishlistController', 'deleteItem'],
 
-    // Product preview / metadata parsing
+    // Product preview / metadata parsing and uploads
     'POST:/api/products/preview' => ['Kureva\Controllers\ProductController', 'preview'],
+    'POST:/api/upload' => ['Kureva\Controllers\ProductController', 'uploadImage'],
 
     // Gift Reservations
     'POST:/api/items/([0-9]+)/reserve' => ['Kureva\Controllers\ReservationController', 'reserve'],

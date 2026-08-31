@@ -35,8 +35,11 @@ class ProductParserService {
         $slugTitle = self::extractTitleFromSlug($cleanUrl);
 
         // Merge and resolve best values
-        $title = $jsonLdData['title'] ?: $ogData['title'] ?: $htmlTitle ?: $slugTitle ?: 'Product from Link';
-        $title = self::cleanTitle($title);
+        $rawTitle = $jsonLdData['title'] ?: $ogData['title'] ?: $htmlTitle ?: $slugTitle ?: 'Product from Link';
+        $title = self::cleanTitle($rawTitle);
+        if (empty($title) || strlen($title) < 3) {
+            $title = self::cleanTitle($slugTitle ?: 'Product from Link');
+        }
 
         $image = $jsonLdData['image'] ?: $ogData['image'] ?: $htmlImage ?: '';
         // If relative URL for image, make absolute
@@ -89,7 +92,7 @@ class ProductParserService {
                     if (isset($item['image'])) {
                         if (is_array($item['image'])) {
                             $first = $item['image'][0] ?? null;
-                            $result['image'] = is_array($first) ? ($first['url'] ?? null) : $first;
+                            $result['image'] = is_array($first) ? ($first['url'] ?? $first) : $first;
                         } else {
                             $result['image'] = $item['image'];
                         }
@@ -164,13 +167,20 @@ class ProductParserService {
 
     private static function cleanTitle(string $title): string {
         $cleaned = trim($title);
+        // Remove trailing URLs, html extensions, and trailing product codes
+        $cleaned = preg_replace('/https?:\/\/\S*/i', '', $cleaned);
+        $cleaned = preg_replace('/https?:?$/i', '', $cleaned);
+        $cleaned = preg_replace('/\.html?.*$/i', '', $cleaned);
+        $cleaned = preg_replace('/[-_]\s*[0-9]{5,}.*$/i', '', $cleaned);
+        $cleaned = preg_replace('/\s+[0-9]{5,}.*$/i', '', $cleaned);
         // Remove trailing store suffix like " | Jumia Nigeria", " - Amazon.com", " : Target"
         $cleaned = preg_replace('/\s*[-|–—:]\s*(Jumia.*|Amazon.*|AliExpress.*|eBay.*|Zara.*|ASOS.*|Shopify.*|Walmart.*|Target.*)$/i', '', $cleaned);
-        return $cleaned ?: $title;
+        return trim($cleaned) ?: $title;
     }
 
     private static function extractTitleFromSlug(string $url): string {
-        $parsed = parse_url($url);
+        $cleanUrl = strtok($url, '?#');
+        $parsed = parse_url($cleanUrl);
         $path = $parsed['path'] ?? '';
         $segments = array_filter(explode('/', $path));
         if (empty($segments)) return '';
@@ -179,17 +189,20 @@ class ProductParserService {
         $bestSegment = '';
         foreach (array_reverse($segments) as $seg) {
             $segClean = preg_replace('/\.html?$/i', '', $seg);
-            $segClean = preg_replace('/^[a-z0-9]+-[a-z0-9]+$/i', '', $segClean);
-            if (strlen($segClean) > strlen($bestSegment)) {
+            if (strlen($segClean) > strlen($bestSegment) && !preg_match('/^(dp|product|item|p|c|category|buy|shop)$/i', $segClean)) {
                 $bestSegment = $segClean;
             }
         }
 
         if ($bestSegment) {
-            // Remove numeric product IDs from ends
-            $bestSegment = preg_replace('/-[0-9]{4,}$/', '', $bestSegment);
+            // Remove numeric product IDs from end
+            $bestSegment = preg_replace('/[-_][0-9]{4,}$/', '', $bestSegment);
+            $bestSegment = preg_replace('/[0-9]{6,}$/', '', $bestSegment);
             $words = preg_split('/[-_]+/', $bestSegment);
-            $words = array_map('ucfirst', array_filter($words));
+            $words = array_filter($words, function($w) {
+                return !empty($w) && !preg_match('/^https?:?$/i', $w) && !preg_match('/^html$/i', $w);
+            });
+            $words = array_map('ucfirst', $words);
             return implode(' ', $words);
         }
 
@@ -201,6 +214,7 @@ class ProductParserService {
         $queries = [
             '//img[@id="landingImage"]/@src',
             '//img[@id="imgBlkFront"]/@src',
+            '//img[contains(@class, "-fw -fh")]/@data-src',
             '//img[contains(@class, "product")]/@src',
             '//img[contains(@class, "gallery")]/@src',
             '//img[@data-src]/@data-src',
@@ -222,19 +236,35 @@ class ProductParserService {
     }
 
     private static function extractPriceRegex(string $html): ?string {
-        // Price matching for various currencies
-        if (preg_match('/(?:₦|NGN|GH₵|\$|€|£|¥)\s*([0-9]{1,3}(?:,[0-9]{3})*(?:\.[0-9]{2})?)/i', $html, $matches)) {
-            return str_replace(',', '', $matches[1]);
-        }
-        if (preg_match('/([0-9]+(?:\.[0-9]{2}))\s*(?:USD|EUR|GBP|NGN)/i', $html, $matches)) {
+        // 1. Check data-price or JSON price
+        if (preg_match('/data-price=["\']?([0-9]+(?:\.[0-9]{2})?)["\']?/i', $html, $matches)) {
             return $matches[1];
         }
+        if (preg_match('/"price":\s*"?([0-9]+(?:\.[0-9]{2})?)"?/i', $html, $matches)) {
+            return $matches[1];
+        }
+
+        // 2. Check Jumia / Nigerian Naira symbol ₦ or &#8358;
+        if (preg_match('/(?:₦|&#8358;|NGN)\s*([0-9]{1,3}(?:,[0-9]{3})*(?:\.[0-9]{2})?|[0-9]+)/i', $html, $matches)) {
+            return str_replace(',', '', $matches[1]);
+        }
+
+        // 3. Price matching for other currencies ($ / € / £ / ¥)
+        if (preg_match('/(?:\$|€|£|¥)\s*([0-9]{1,3}(?:,[0-9]{3})*(?:\.[0-9]{2})?|[0-9]+(?:\.[0-9]{2})?)/i', $html, $matches)) {
+            return str_replace(',', '', $matches[1]);
+        }
+
+        // 4. Look for numbers inside class="prc" or class="price"
+        if (preg_match('/class=["\'][^"\']*(?:prc|price)[^"\']*["\'][^>]*>\s*(?:[^0-9<]*)\s*([0-9,]+(?:\.[0-9]{2})?)/i', $html, $matches)) {
+            return str_replace(',', '', $matches[1]);
+        }
+
         return null;
     }
 
     private static function detectCurrency(string $url, string $html): string {
         $host = strtolower(parse_url($url, PHP_URL_HOST) ?? '');
-        if (str_contains($host, '.ng') || str_contains($host, 'jumia.com.ng') || str_contains($host, 'konga.com') || str_contains($html, '₦') || str_contains($html, 'NGN')) {
+        if (str_contains($host, '.ng') || str_contains($host, 'jumia.com.ng') || str_contains($host, 'konga.com') || str_contains($html, '₦') || str_contains($html, '&#8358;') || str_contains($html, 'NGN')) {
             return 'NGN';
         }
         if (str_contains($host, '.uk') || str_contains($host, '.co.uk') || str_contains($html, '£') || str_contains($html, 'GBP')) {
@@ -281,7 +311,7 @@ class ProductParserService {
     }
 
     private static function emptyResult(string $url): array {
-        $slugTitle = self::extractTitleFromSlug($url);
+        $slugTitle = self::cleanTitle(self::extractTitleFromSlug($url));
         $parsed = parse_url($url);
         $host = isset($parsed['host']) ? strtolower($parsed['host']) : 'External Store';
         $store = self::detectStore($url, new \DOMXPath(new \DOMDocument()));

@@ -332,20 +332,32 @@ export default function NewWishPage() {
 
                 {/* Auto-Fetched Preview Badge */}
                 {hasAutoFilled && (
-                  <div className="mt-4 p-4 border border-green-100 bg-green-50/50 rounded-lg flex items-center space-x-4">
-                    {imageUrl && (
-                      <div className="h-16 w-16 bg-white border border-border/80 rounded-md overflow-hidden shrink-0">
+                  <div className="mt-4 p-4 border border-green-200/80 bg-green-50/60 rounded-xl flex items-center space-x-4 animate-fade-in">
+                    {imageUrl ? (
+                      <div className="h-16 w-16 bg-white border border-border/80 rounded-lg overflow-hidden shrink-0 flex items-center justify-center">
                         {/* eslint-disable-next-line @next/next/no-img-element */}
                         <img src={imageUrl} alt="" className="h-full w-full object-contain" />
                       </div>
+                    ) : (
+                      <div className="h-16 w-16 bg-white border border-border/80 rounded-lg shrink-0 flex items-center justify-center">
+                        <ShoppingBag className="w-6 h-6 text-accent/60" />
+                      </div>
                     )}
                     <div className="flex-1 min-w-0">
-                      <h4 className="text-xs font-semibold text-primary truncate">
+                      <h4 className="text-xs font-semibold text-primary line-clamp-2 leading-snug">
                         {name || "Item from link"}
                       </h4>
-                      <div className="flex items-center space-x-2 mt-1 text-[11px] text-secondary">
-                        {price && <span className="font-semibold text-accent">{currency} {price}</span>}
-                        {store && <span className="px-1.5 py-0.5 bg-white border border-border rounded text-[10px]">{store}</span>}
+                      <div className="flex flex-wrap items-center gap-2 mt-1.5 text-[11px] text-secondary">
+                        {price ? (
+                          <span className="font-semibold text-accent">{currency} {parseFloat(price).toLocaleString()}</span>
+                        ) : (
+                          <span className="text-[10px] text-secondary font-light italic">Price not listed (Optional)</span>
+                        )}
+                        {store && (
+                          <span className="px-2 py-0.5 bg-white border border-border rounded-full text-[10px] font-medium text-primary">
+                            {store}
+                          </span>
+                        )}
                       </div>
                     </div>
                   </div>

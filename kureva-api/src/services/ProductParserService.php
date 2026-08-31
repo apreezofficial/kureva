@@ -15,7 +15,7 @@ class ProductParserService {
             return self::emptyResult($cleanUrl);
         }
 
-        // Clean up formatting
+        // Clean up DOM formatting
         $dom = new \DOMDocument();
         libxml_use_internal_errors(true);
         $dom->loadHTML('<?xml encoding="utf-8" ?>' . $html, LIBXML_HTML_NOIMPLIED | LIBXML_HTML_NODEFDTD);
@@ -23,41 +23,75 @@ class ProductParserService {
 
         $xpath = new \DOMXPath($dom);
 
-        // Try JSON-LD first
+        // 1. Try JSON-LD Structured Data
         $jsonLdData = self::parseJsonLd($xpath);
         
-        // Try OpenGraph & Meta
+        // 2. Try Microdata (itemprop)
+        $microdata = self::parseMicrodata($xpath);
+
+        // 3. Try OpenGraph & Meta tags
         $ogData = self::parseOpenGraph($xpath);
 
-        // Try HTML Elements (H1, Title tag, etc.)
+        // 4. Try Embedded JavaScript / DataLayer (Jumia, Shopify, Amazon)
+        $jsData = self::parseEmbeddedJs($html);
+
+        // 5. Try DOM Specific Price Selectors (Amazon, Jumia, generic stores)
+        $domPrice = self::extractDomPrice($xpath);
+
+        // 6. Try Title Tag / H1
         $htmlTitle = self::extractTitleTag($dom, $xpath);
-        $htmlImage = self::extractFirstImage($xpath);
         $slugTitle = self::extractTitleFromSlug($cleanUrl);
 
-        // Merge and resolve best values
-        $rawTitle = $jsonLdData['title'] ?: $ogData['title'] ?: $htmlTitle ?: $slugTitle ?: 'Product from Link';
+        // Resolve best title
+        $rawTitle = $jsonLdData['title'] 
+            ?: $microdata['title'] 
+            ?: $ogData['title'] 
+            ?: $jsData['title'] 
+            ?: $htmlTitle 
+            ?: $slugTitle 
+            ?: 'Product from Link';
         $title = self::cleanTitle($rawTitle);
         if (empty($title) || strlen($title) < 3) {
             $title = self::cleanTitle($slugTitle ?: 'Product from Link');
         }
 
-        $image = $jsonLdData['image'] ?: $ogData['image'] ?: $htmlImage ?: '';
-        // If relative URL for image, make absolute
+        // Resolve best image
+        $image = $jsonLdData['image'] 
+            ?: $microdata['image'] 
+            ?: $ogData['image'] 
+            ?: $jsData['image'] 
+            ?: self::extractFirstImage($xpath);
         if ($image && strpos($image, '//') === 0) {
             $image = 'https:' . $image;
         }
 
-        $price = $jsonLdData['price'] ?: $ogData['price'] ?: self::extractPriceRegex($html);
-        $currency = $jsonLdData['currency'] ?: $ogData['currency'] ?: self::detectCurrency($cleanUrl, $html);
-        $description = $jsonLdData['description'] ?: $ogData['description'] ?: '';
+        // Resolve best price (hierarchy)
+        $rawPrice = $jsonLdData['price']
+            ?: $microdata['price']
+            ?: $ogData['price']
+            ?: $domPrice
+            ?: $jsData['price']
+            ?: self::extractPriceRegex($html);
+        
+        $price = self::sanitizePrice($rawPrice);
+
+        // Resolve best currency
+        $currency = $jsonLdData['currency'] 
+            ?: $microdata['currency'] 
+            ?: $ogData['currency'] 
+            ?: $jsData['currency'] 
+            ?: self::detectCurrency($cleanUrl, $html);
+
+        // Resolve description & store
+        $description = $jsonLdData['description'] ?: $ogData['description'] ?: $microdata['description'] ?: '';
         $store = self::detectStore($cleanUrl, $xpath);
 
         return [
             'name' => $title,
-            'image_url' => $image,
+            'image_url' => $image ?: '',
             'product_url' => $cleanUrl,
             'store' => $store,
-            'price' => $price !== null && $price !== '' ? floatval($price) : null,
+            'price' => $price,
             'currency' => $currency,
             'description' => substr(trim(strip_tags($description)), 0, 500)
         ];
@@ -68,10 +102,10 @@ class ProductParserService {
         $scripts = $xpath->query('//script[@type="application/ld+json"]');
         
         foreach ($scripts as $script) {
-            $json = json_decode($script->nodeValue, true);
+            $rawContent = trim($script->nodeValue);
+            $json = json_decode($rawContent, true);
             if (!$json) continue;
 
-            // Handle nested graphs or arrays
             $items = [];
             if (isset($json['@graph']) && is_array($json['@graph'])) {
                 $items = $json['@graph'];
@@ -85,38 +119,80 @@ class ProductParserService {
                 if (!is_array($item)) continue;
                 $type = strtolower($item['@type'] ?? '');
                 
-                if (in_array($type, ['product', 'individualproduct', 'itempage', 'productmodel'])) {
-                    $result['title'] = $item['name'] ?? null;
-                    $result['description'] = $item['description'] ?? null;
+                if (in_array($type, ['product', 'individualproduct', 'itempage', 'productmodel', 'productgroup'])) {
+                    if (!empty($item['name'])) $result['title'] = $item['name'];
+                    if (!empty($item['description'])) $result['description'] = $item['description'];
                     
-                    if (isset($item['image'])) {
+                    if (!empty($item['image'])) {
                         if (is_array($item['image'])) {
                             $first = $item['image'][0] ?? null;
-                            $result['image'] = is_array($first) ? ($first['url'] ?? $first) : $first;
+                            $result['image'] = is_array($first) ? ($first['url'] ?? $first['contentUrl'] ?? null) : $first;
                         } else {
                             $result['image'] = $item['image'];
                         }
                     }
 
-                    if (isset($item['offers'])) {
+                    if (!empty($item['offers'])) {
                         $offers = $item['offers'];
                         if (is_array($offers)) {
-                            if (isset($offers['price'])) {
-                                $result['price'] = $offers['price'];
-                                $result['currency'] = $offers['priceCurrency'] ?? null;
-                            } elseif (isset($offers['lowPrice'])) {
-                                $result['price'] = $offers['lowPrice'];
-                                $result['currency'] = $offers['priceCurrency'] ?? null;
-                            } elseif (array_is_list($offers) && isset($offers[0]['price'])) {
-                                $result['price'] = $offers[0]['price'];
-                                $result['currency'] = $offers[0]['priceCurrency'] ?? null;
+                            // Offers array
+                            $targetOffer = array_is_list($offers) ? ($offers[0] ?? []) : $offers;
+                            if (isset($targetOffer['price'])) {
+                                $result['price'] = $targetOffer['price'];
+                            } elseif (isset($targetOffer['lowPrice'])) {
+                                $result['price'] = $targetOffer['lowPrice'];
+                            } elseif (isset($targetOffer['highPrice'])) {
+                                $result['price'] = $targetOffer['highPrice'];
+                            }
+
+                            if (!empty($targetOffer['priceCurrency'])) {
+                                $result['currency'] = $targetOffer['priceCurrency'];
                             }
                         }
                     }
-                    break 2;
+
+                    if ($result['title'] || $result['price']) {
+                        break 2;
+                    }
                 }
             }
         }
+        return $result;
+    }
+
+    private static function parseMicrodata(\DOMXPath $xpath): array {
+        $result = ['title' => null, 'image' => null, 'price' => null, 'currency' => null, 'description' => null];
+
+        // Itemprop price
+        $priceNodes = $xpath->query('//*[@itemprop="price"]/@content | //*[@itemprop="price"]/text() | //*[@itemprop="lowPrice"]/@content');
+        if ($priceNodes && $priceNodes->length > 0) {
+            foreach ($priceNodes as $node) {
+                $val = trim($node->nodeValue);
+                if (!empty($val) && preg_match('/[0-9]/', $val)) {
+                    $result['price'] = $val;
+                    break;
+                }
+            }
+        }
+
+        // Itemprop currency
+        $currNodes = $xpath->query('//*[@itemprop="priceCurrency"]/@content | //*[@itemprop="priceCurrency"]/text()');
+        if ($currNodes && $currNodes->length > 0) {
+            $result['currency'] = trim($currNodes->item(0)->nodeValue);
+        }
+
+        // Itemprop name
+        $nameNodes = $xpath->query('//*[@itemprop="name"]/@content | //*[@itemprop="name"]/text()');
+        if ($nameNodes && $nameNodes->length > 0) {
+            $result['title'] = trim($nameNodes->item(0)->nodeValue);
+        }
+
+        // Itemprop image
+        $imageNodes = $xpath->query('//*[@itemprop="image"]/@src | //*[@itemprop="image"]/@content');
+        if ($imageNodes && $imageNodes->length > 0) {
+            $result['image'] = trim($imageNodes->item(0)->nodeValue);
+        }
+
         return $result;
     }
 
@@ -126,7 +202,7 @@ class ProductParserService {
         $metaTags = [
             'title' => ['og:title', 'twitter:title', 'title'],
             'image' => ['og:image', 'og:image:secure_url', 'twitter:image', 'twitter:image:src', 'image'],
-            'price' => ['product:price:amount', 'og:price:amount', 'price', 'twitter:data1'],
+            'price' => ['product:price:amount', 'og:price:amount', 'price', 'twitter:data1', 'product:sale_price:amount'],
             'currency' => ['product:price:currency', 'og:price:currency', 'currency'],
             'description' => ['og:description', 'twitter:description', 'description']
         ];
@@ -146,6 +222,102 @@ class ProductParserService {
         }
 
         return $result;
+    }
+
+    private static function parseEmbeddedJs(string $html): array {
+        $result = ['title' => null, 'image' => null, 'price' => null, 'currency' => null];
+
+        // 1. Jumia & modern stores universal_variable / dataLayer / ecommerce object
+        if (preg_match('/(?:unit_price|unit_sale_price|price|prices|amount)["\']?\s*:\s*["\']?([0-9]{1,7}(?:\.[0-9]{2})?)["\']?/i', $html, $matches)) {
+            $result['price'] = $matches[1];
+        }
+
+        // 2. data-price or data-prc attributes in raw HTML
+        if (!$result['price'] && preg_match('/data-(?:prc|price|amount|product-price)=["\']?([0-9]+(?:\.[0-9]{2})?)["\']?/i', $html, $matches)) {
+            $result['price'] = $matches[1];
+        }
+
+        // 3. Shopify product object
+        if (preg_match('/var\s+meta\s*=\s*({.*?});/s', $html, $matches)) {
+            $shopifyMeta = json_decode($matches[1], true);
+            if (isset($shopifyMeta['product']['price'])) {
+                $result['price'] = floatval($shopifyMeta['product']['price']) / 100;
+            }
+        }
+
+        return $result;
+    }
+
+    private static function extractDomPrice(\DOMXPath $xpath): ?string {
+        // Targeted queries for popular stores
+        $queries = [
+            // Jumia price selectors
+            '//span[contains(@class, "-prxs")]/text()',
+            '//div[contains(@class, "prc")]/text()',
+            '//span[contains(@class, "-fs24")]/text()',
+            '//span[contains(@class, "-b") and contains(@class, "-ltr")]/text()',
+            // Amazon price selectors
+            '//span[contains(@class, "apexPriceToPay")]//span[contains(@class, "a-offscreen")]/text()',
+            '//span[@id="priceblock_ourprice"]/text()',
+            '//span[@id="priceblock_dealprice"]/text()',
+            '//span[contains(@class, "a-price")]//span[contains(@class, "a-offscreen")]/text()',
+            // Generic price classes
+            '//*[contains(@class, "product-price")]/text()',
+            '//*[contains(@class, "current-price")]/text()',
+            '//*[contains(@class, "price-box")]/text()',
+            '//*[contains(@class, "sale-price")]/text()',
+        ];
+
+        foreach ($queries as $q) {
+            $nodes = $xpath->query($q);
+            if ($nodes && $nodes->length > 0) {
+                foreach ($nodes as $node) {
+                    $text = trim($node->nodeValue);
+                    if (preg_match('/[0-9]/', $text)) {
+                        // Clean currency symbols from text
+                        $cleaned = preg_replace('/[^0-9.,]/', '', $text);
+                        if (!empty($cleaned)) {
+                            return $cleaned;
+                        }
+                    }
+                }
+            }
+        }
+
+        return null;
+    }
+
+    private static function extractPriceRegex(string $html): ?string {
+        // 1. Jumia & Nigerian Naira symbol ₦ or &#8358;
+        if (preg_match('/(?:₦|&#8358;|NGN|\bN\b)\s*([0-9]{1,3}(?:,[0-9]{3})*(?:\.[0-9]{2})?|[0-9]+)/i', $html, $matches)) {
+            return $matches[1];
+        }
+
+        // 2. Dollar, Euro, Pound, Yen symbols
+        if (preg_match('/(?:\$|€|£|¥)\s*([0-9]{1,3}(?:,[0-9]{3})*(?:\.[0-9]{2})?|[0-9]+(?:\.[0-9]{2})?)/i', $html, $matches)) {
+            return $matches[1];
+        }
+
+        return null;
+    }
+
+    private static function sanitizePrice($price): ?float {
+        if ($price === null || $price === '') return null;
+        if (is_numeric($price)) {
+            $val = floatval($price);
+            return ($val > 0 && $val < 100000000) ? $val : null;
+        }
+
+        $str = strval($price);
+        // Replace commas
+        $str = str_replace(',', '', $str);
+        // Extract numeric float
+        if (preg_match('/([0-9]+(?:\.[0-9]{1,2})?)/', $str, $matches)) {
+            $val = floatval($matches[1]);
+            return ($val > 0 && $val < 100000000) ? $val : null;
+        }
+
+        return null;
     }
 
     private static function extractTitleTag(\DOMDocument $dom, \DOMXPath $xpath): ?string {
@@ -210,7 +382,6 @@ class ProductParserService {
     }
 
     private static function extractFirstImage(\DOMXPath $xpath): ?string {
-        // Look for typical ecommerce high-res product images
         $queries = [
             '//img[@id="landingImage"]/@src',
             '//img[@id="imgBlkFront"]/@src',
@@ -232,33 +403,6 @@ class ProductParserService {
                 }
             }
         }
-        return null;
-    }
-
-    private static function extractPriceRegex(string $html): ?string {
-        // 1. Check data-price or JSON price
-        if (preg_match('/data-price=["\']?([0-9]+(?:\.[0-9]{2})?)["\']?/i', $html, $matches)) {
-            return $matches[1];
-        }
-        if (preg_match('/"price":\s*"?([0-9]+(?:\.[0-9]{2})?)"?/i', $html, $matches)) {
-            return $matches[1];
-        }
-
-        // 2. Check Jumia / Nigerian Naira symbol ₦ or &#8358;
-        if (preg_match('/(?:₦|&#8358;|NGN)\s*([0-9]{1,3}(?:,[0-9]{3})*(?:\.[0-9]{2})?|[0-9]+)/i', $html, $matches)) {
-            return str_replace(',', '', $matches[1]);
-        }
-
-        // 3. Price matching for other currencies ($ / € / £ / ¥)
-        if (preg_match('/(?:\$|€|£|¥)\s*([0-9]{1,3}(?:,[0-9]{3})*(?:\.[0-9]{2})?|[0-9]+(?:\.[0-9]{2})?)/i', $html, $matches)) {
-            return str_replace(',', '', $matches[1]);
-        }
-
-        // 4. Look for numbers inside class="prc" or class="price"
-        if (preg_match('/class=["\'][^"\']*(?:prc|price)[^"\']*["\'][^>]*>\s*(?:[^0-9<]*)\s*([0-9,]+(?:\.[0-9]{2})?)/i', $html, $matches)) {
-            return str_replace(',', '', $matches[1]);
-        }
-
         return null;
     }
 
@@ -328,7 +472,7 @@ class ProductParserService {
     }
 
     /**
-     * SSRF Safe URL Fetcher with modern browser headers and redirect tracking
+     * SSRF Safe URL Fetcher with modern browser headers, gzip/br auto-decompression, and redirect tracking
      */
     private static function fetchSafeUrl(string $url): ?string {
         $maxRedirects = 5;
@@ -357,9 +501,11 @@ class ProductParserService {
             curl_setopt($ch, CURLOPT_URL, $currentUrl);
             curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
             curl_setopt($ch, CURLOPT_FOLLOWLOCATION, false);
-            curl_setopt($ch, CURLOPT_TIMEOUT, 8);
+            curl_setopt($ch, CURLOPT_TIMEOUT, 10);
             curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
             curl_setopt($ch, CURLOPT_SSL_VERIFYHOST, false);
+            curl_setopt($ch, CURLOPT_ENCODING, ''); // Automatically handles gzip, deflate, and br decompression!
+            curl_setopt($ch, CURLOPT_COOKIEFILE, ''); // Enables in-memory cookie jar
             curl_setopt($ch, CURLOPT_HTTPHEADER, [
                 'User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36',
                 'Accept: text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8',

@@ -1,13 +1,29 @@
 "use client";
 
-import { useEffect, useState, use } from "react";
+import { useEffect, useState, use, useRef } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { useAuth } from "@/lib/auth";
 import { apiRequest } from "@/lib/api";
 import Navbar from "@/components/navigation/Navbar";
 import MobileNav from "@/components/navigation/MobileNav";
-import { Plus, X, Share2, Edit2, Trash2, ExternalLink, Globe, EyeOff, Link2, AlertCircle, Copy, Check } from "lucide-react";
+import { 
+  Plus, 
+  X, 
+  Share2, 
+  Edit2, 
+  Trash2, 
+  ExternalLink, 
+  Globe, 
+  EyeOff, 
+  Link2, 
+  AlertCircle, 
+  Copy, 
+  Check,
+  Upload,
+  Pencil,
+  Loader2
+} from "lucide-react";
 
 export default function WishlistDetailPage({ params }: { params: Promise<{ uuid: string }> }) {
   const resolvedParams = use(params);
@@ -25,24 +41,23 @@ export default function WishlistDetailPage({ params }: { params: Promise<{ uuid:
   const [editDescription, setEditDescription] = useState("");
   const [editCoverImage, setEditCoverImage] = useState("");
   const [editVisibility, setEditVisibility] = useState("");
-  
-  // Add Item Modal & Form
-  const [isAddItemOpen, setIsAddItemOpen] = useState(false);
-  const [importUrl, setImportUrl] = useState("");
-  const [importingUrl, setImportingUrl] = useState(false);
-  const [importError, setImportError] = useState("");
-  
-  // New Item details form
-  const [itemName, setItemName] = useState("");
-  const [itemImage, setItemImage] = useState("");
-  const [itemUrl, setItemUrl] = useState("");
-  const [itemStore, setItemStore] = useState("");
-  const [itemPrice, setItemPrice] = useState("");
-  const [itemCurrency, setItemCurrency] = useState("USD");
-  const [itemNotes, setItemNotes] = useState("");
-  const [itemPriority, setItemPriority] = useState("nice_to_have");
-  const [itemQuantity, setItemQuantity] = useState("1");
-  const [addingItem, setAddingItem] = useState(false);
+  const [coverUploading, setCoverUploading] = useState(false);
+  const coverFileInputRef = useRef<HTMLInputElement>(null);
+
+  // Edit Item Modal State
+  const [editingItem, setEditingItem] = useState<any>(null);
+  const [editItemName, setEditItemName] = useState("");
+  const [editItemPrice, setEditItemPrice] = useState("");
+  const [editItemCurrency, setEditItemCurrency] = useState("USD");
+  const [editItemStore, setEditItemStore] = useState("");
+  const [editItemImage, setEditItemImage] = useState("");
+  const [editItemUrl, setEditItemUrl] = useState("");
+  const [editItemNotes, setEditItemNotes] = useState("");
+  const [editItemPriority, setEditItemPriority] = useState("nice_to_have");
+  const [editItemQuantity, setEditItemQuantity] = useState("1");
+  const [savingItem, setSavingItem] = useState(false);
+  const [editItemImageUploading, setEditItemImageUploading] = useState(false);
+  const editItemFileInputRef = useRef<HTMLInputElement>(null);
 
   const fetchWishlist = async () => {
     try {
@@ -78,6 +93,62 @@ export default function WishlistDetailPage({ params }: { params: Promise<{ uuid:
     setTimeout(() => setCopied(false), 2000);
   };
 
+  const handleCoverUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = e.target.files;
+    if (!files || files.length === 0) return;
+
+    const file = files[0];
+    const formData = new FormData();
+    formData.append("image", file);
+
+    setCoverUploading(true);
+    try {
+      const res = await fetch("http://127.0.0.1:8000/api/upload", {
+        method: "POST",
+        body: formData,
+        headers: {
+          "Authorization": `Bearer ${localStorage.getItem("token") || ""}`
+        }
+      });
+      const data = await res.json();
+      if (data.success && data.data?.url) {
+        setEditCoverImage(data.data.url);
+      }
+    } catch (err) {
+      alert("Failed to upload image");
+    } finally {
+      setCoverUploading(false);
+    }
+  };
+
+  const handleEditItemImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = e.target.files;
+    if (!files || files.length === 0) return;
+
+    const file = files[0];
+    const formData = new FormData();
+    formData.append("image", file);
+
+    setEditItemImageUploading(true);
+    try {
+      const res = await fetch("http://127.0.0.1:8000/api/upload", {
+        method: "POST",
+        body: formData,
+        headers: {
+          "Authorization": `Bearer ${localStorage.getItem("token") || ""}`
+        }
+      });
+      const data = await res.json();
+      if (data.success && data.data?.url) {
+        setEditItemImage(data.data.url);
+      }
+    } catch (err) {
+      alert("Failed to upload image");
+    } finally {
+      setEditItemImageUploading(false);
+    }
+  };
+
   const handleUpdateSettings = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
@@ -107,74 +178,54 @@ export default function WishlistDetailPage({ params }: { params: Promise<{ uuid:
     }
   };
 
-  const handleUrlPreview = async () => {
-    if (!importUrl) return;
-    setImportingUrl(true);
-    setImportError("");
-    try {
-      const res = await apiRequest("/api/products/preview", {
-        method: "POST",
-        data: { url: importUrl },
-      });
-      if (res.success && res.data) {
-        const preview = res.data;
-        setItemName(preview.name || "");
-        setItemImage(preview.image_url || "");
-        setItemUrl(preview.product_url || importUrl);
-        setItemStore(preview.store || "");
-        setItemPrice(preview.price ? String(preview.price) : "");
-        setItemCurrency(preview.currency || "USD");
-        setItemNotes(preview.description || "");
-      }
-    } catch (err: any) {
-      setImportError(err.message || "Could not retrieve details. Entering manually.");
-      setItemUrl(importUrl);
-    } finally {
-      setImportingUrl(false);
-    }
+  const openEditItemModal = (item: any) => {
+    setEditingItem(item);
+    setEditItemName(item.name || "");
+    setEditItemPrice(item.price !== null ? String(item.price) : "");
+    setEditItemCurrency(item.currency || "USD");
+    setEditItemStore(item.store || "");
+    setEditItemImage(item.image_url || "");
+    setEditItemUrl(item.product_url || "");
+    setEditItemNotes(item.notes || "");
+    setEditItemPriority(item.priority || "nice_to_have");
+    setEditItemQuantity(String(item.quantity || 1));
   };
 
-  const handleAddItem = async (e: React.FormEvent) => {
+  const handleSaveEditedItem = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!itemName) return;
-    setAddingItem(true);
+    if (!editingItem) return;
+    if (!editItemName.trim()) {
+      alert("Product name is required.");
+      return;
+    }
+
+    setSavingItem(true);
     try {
-      await apiRequest(`/api/wishlists/${uuid}/items`, {
-        method: "POST",
+      await apiRequest(`/api/wishlists/${uuid}/items/${editingItem.id}`, {
+        method: "PATCH",
         data: {
-          name: itemName,
-          image_url: itemImage,
-          product_url: itemUrl,
-          store: itemStore,
-          price: itemPrice ? parseFloat(itemPrice) : null,
-          currency: itemCurrency,
-          notes: itemNotes,
-          priority: itemPriority,
-          quantity: parseInt(itemQuantity) || 1,
-        },
+          name: editItemName,
+          price: editItemPrice !== "" ? parseFloat(editItemPrice) : null,
+          currency: editItemCurrency,
+          store: editItemStore,
+          image_url: editItemImage,
+          product_url: editItemUrl,
+          notes: editItemNotes,
+          priority: editItemPriority,
+          quantity: parseInt(editItemQuantity) || 1,
+        }
       });
-      setIsAddItemOpen(false);
-      // reset form
-      setItemName("");
-      setItemImage("");
-      setItemUrl("");
-      setItemStore("");
-      setItemPrice("");
-      setItemCurrency("USD");
-      setItemNotes("");
-      setItemPriority("nice_to_have");
-      setItemQuantity("1");
-      setImportUrl("");
+      setEditingItem(null);
       fetchWishlist();
-    } catch (err) {
-      alert("Failed to add wishlist item.");
+    } catch (err: any) {
+      alert(err.message || "Failed to update item.");
     } finally {
-      setAddingItem(false);
+      setSavingItem(false);
     }
   };
 
   const handleDeleteItem = async (itemId: number) => {
-    if (!confirm("Remove this item?")) return;
+    if (!confirm("Remove this item from your collection?")) return;
     try {
       await apiRequest(`/api/wishlists/${uuid}/items/${itemId}`, { method: "DELETE" });
       fetchWishlist();
@@ -207,7 +258,7 @@ export default function WishlistDetailPage({ params }: { params: Promise<{ uuid:
   if (!wishlist) return null;
 
   return (
-    <div className="min-h-screen bg-white pb-20 md:pb-8 flex flex-col justify-between">
+    <div className="min-h-screen bg-[#fafaf9] pb-24 md:pb-12 flex flex-col justify-between">
       <div>
         <Navbar />
         
@@ -221,31 +272,14 @@ export default function WishlistDetailPage({ params }: { params: Promise<{ uuid:
 
         <main className="mx-auto max-w-5xl px-6 py-8">
           {/* Action Header */}
-          <div className="flex flex-col md:flex-row md:items-start justify-between gap-6 pb-6 border-b border-border mb-8">
+          <div className="flex flex-col md:flex-row md:items-end justify-between gap-4 border-b border-border/60 pb-6 mb-8">
             <div>
-              <div className="flex items-center space-x-2.5 mb-2">
-                <span className="text-[11px] tracking-wide text-secondary uppercase font-semibold flex items-center space-x-1.5">
-                  {wishlist.visibility === "public" ? (
-                    <>
-                      <Globe className="w-3.5 h-3.5 text-accent" />
-                      <span>Public</span>
-                    </>
-                  ) : wishlist.visibility === "unlisted" ? (
-                    <>
-                      <Link2 className="w-3.5 h-3.5 text-blue-500" />
-                      <span>Unlisted (Shared)</span>
-                    </>
-                  ) : (
-                    <>
-                      <EyeOff className="w-3.5 h-3.5 text-gray-400" />
-                      <span>Private</span>
-                    </>
-                  )}
-                </span>
-                <span className="text-[11px] text-secondary">•</span>
-                <span className="text-[11px] text-secondary font-medium">Owner view</span>
+              <div className="flex items-center space-x-2 text-xs text-secondary mb-2 font-medium tracking-wide uppercase">
+                <span>{wishlist.visibility} (Shared)</span>
+                <span>•</span>
+                <span>Owner view</span>
               </div>
-              <h1 className="text-3xl font-normal text-primary tracking-tight font-editorial leading-tight">
+              <h1 className="text-3xl font-normal text-primary tracking-tight font-editorial">
                 {wishlist.name}
               </h1>
               <p className="text-sm text-secondary mt-1.5 max-w-2xl leading-relaxed font-light">
@@ -256,21 +290,21 @@ export default function WishlistDetailPage({ params }: { params: Promise<{ uuid:
             <div className="flex flex-wrap gap-2.5">
               <button
                 onClick={handleCopyLink}
-                className="flex items-center space-x-1.5 px-3 py-2 border border-border rounded text-sm text-secondary hover:text-primary hover:bg-soft transition-all duration-200"
+                className="flex items-center space-x-1.5 px-3.5 py-2 border border-border rounded-lg text-sm text-secondary hover:text-primary hover:bg-white transition-all duration-200 bg-white/60 shadow-sm"
               >
                 {copied ? <Check className="w-4 h-4 text-accent" /> : <Share2 className="w-4 h-4" />}
                 <span className="text-xs font-medium">{copied ? "Copied" : "Copy Link"}</span>
               </button>
               <button
                 onClick={() => setIsEditSettingsOpen(true)}
-                className="flex items-center space-x-1.5 px-3 py-2 border border-border rounded text-sm text-secondary hover:text-primary hover:bg-soft transition-all duration-200"
+                className="flex items-center space-x-1.5 px-3.5 py-2 border border-border rounded-lg text-sm text-secondary hover:text-primary hover:bg-white transition-all duration-200 bg-white/60 shadow-sm"
               >
                 <Edit2 className="w-4 h-4" />
                 <span className="text-xs font-medium">Settings</span>
               </button>
               <Link
                 href={`/dashboard/wishes/new?wishlist=${wishlist.uuid}`}
-                className="flex items-center space-x-1.5 px-4 py-2 bg-accent text-white rounded text-sm hover:bg-accent-dark transition-all duration-200 font-medium"
+                className="flex items-center space-x-1.5 px-4 py-2 bg-accent text-white rounded-lg text-sm hover:bg-accent-dark transition-all duration-200 font-medium shadow-sm"
               >
                 <Plus className="w-4 h-4" />
                 <span>Add Wish</span>
@@ -280,7 +314,7 @@ export default function WishlistDetailPage({ params }: { params: Promise<{ uuid:
 
           {/* Items Listing */}
           {wishlist.items.length === 0 ? (
-            <div className="text-center py-16 border border-dashed border-border rounded-lg bg-soft max-w-md mx-auto">
+            <div className="text-center py-16 border border-dashed border-border rounded-xl bg-white max-w-md mx-auto shadow-sm">
               <Plus className="w-8 h-8 text-secondary/40 mx-auto mb-3" />
               <h3 className="font-medium text-primary text-base mb-1">List is empty</h3>
               <p className="text-xs text-secondary mb-6 leading-relaxed font-light px-6">
@@ -288,7 +322,7 @@ export default function WishlistDetailPage({ params }: { params: Promise<{ uuid:
               </p>
               <Link
                 href={`/dashboard/wishes/new?wishlist=${wishlist.uuid}`}
-                className="px-5 py-2 bg-accent text-white rounded text-sm hover:bg-accent-dark transition-colors font-medium inline-block"
+                className="px-5 py-2.5 bg-accent text-white rounded-lg text-sm hover:bg-accent-dark transition-colors font-medium inline-block shadow-sm"
               >
                 Add your first item
               </Link>
@@ -298,27 +332,27 @@ export default function WishlistDetailPage({ params }: { params: Promise<{ uuid:
               {wishlist.items.map((item: any) => (
                 <div
                   key={item.id}
-                  className="border border-border rounded-lg overflow-hidden flex flex-col justify-between bg-white group hover:border-accent hover:shadow-sm transition-all duration-200"
+                  className="border border-border rounded-xl overflow-hidden flex flex-col justify-between bg-white group hover:border-accent hover:shadow-md transition-all duration-200"
                 >
                   <div className="relative">
                     {item.image_url ? (
-                      <div className="h-44 bg-gray-50 overflow-hidden relative border-b border-border/40">
+                      <div className="h-48 bg-white overflow-hidden relative border-b border-border/40 p-2 flex items-center justify-center">
                         {/* eslint-disable-next-line @next/next/no-img-element */}
                         <img
                           src={item.image_url}
                           alt={item.name}
-                          className="w-full h-full object-cover"
+                          className="w-full h-full object-contain group-hover:scale-105 transition-transform duration-300"
                         />
                       </div>
                     ) : (
-                      <div className="h-44 bg-soft flex items-center justify-center border-b border-border/40 text-secondary/30">
+                      <div className="h-44 bg-soft flex items-center justify-center border-b border-border/40 text-secondary/40 text-xs">
                         No image
                       </div>
                     )}
                     
                     {/* Priority Badge */}
                     <div className="absolute top-3 left-3">
-                      <span className={`text-[10px] tracking-wide font-semibold px-2 py-0.5 rounded shadow-sm border ${
+                      <span className={`text-[10px] tracking-wide font-semibold px-2.5 py-0.5 rounded-full shadow-sm border ${
                         item.priority === "must_have" 
                           ? "bg-red-50 text-red-600 border-red-100"
                           : item.priority === "really_want"
@@ -332,7 +366,7 @@ export default function WishlistDetailPage({ params }: { params: Promise<{ uuid:
                     {/* Reservation Badge */}
                     {item.reservation_status && (
                       <div className="absolute top-3 right-3">
-                        <span className={`text-[10px] tracking-wide font-semibold px-2 py-0.5 rounded shadow-sm border ${
+                        <span className={`text-[10px] tracking-wide font-semibold px-2.5 py-0.5 rounded-full shadow-sm border ${
                           item.reservation_status === "purchased"
                             ? "bg-accent/10 text-accent border-accent/20"
                             : "bg-blue-50 text-blue-600 border-blue-100"
@@ -345,7 +379,7 @@ export default function WishlistDetailPage({ params }: { params: Promise<{ uuid:
 
                   <div className="p-5 flex-grow">
                     <div className="flex items-start justify-between gap-2">
-                      <h3 className="font-medium text-primary text-base leading-snug line-clamp-2">
+                      <h3 className="font-medium text-primary text-sm leading-snug line-clamp-2">
                         {item.name}
                       </h3>
                       {item.product_url && (
@@ -353,63 +387,288 @@ export default function WishlistDetailPage({ params }: { params: Promise<{ uuid:
                           href={item.product_url}
                           target="_blank"
                           rel="noopener noreferrer"
-                          className="text-secondary hover:text-accent p-0.5 transition-colors"
+                          className="text-secondary hover:text-accent p-0.5 transition-colors shrink-0"
+                          title="Visit store product link"
                         >
                           <ExternalLink className="w-3.5 h-3.5" />
                         </a>
                       )}
                     </div>
                     
-                    <div className="mt-2 flex items-baseline space-x-1.5 text-primary">
-                      {item.price !== null ? (
+                    <div className="mt-2.5 flex items-baseline space-x-1.5 text-primary">
+                      {item.price !== null && item.price !== "" ? (
                         <>
-                          <span className="text-lg font-semibold">{parseFloat(item.price).toFixed(2)}</span>
-                          <span className="text-xs text-secondary font-medium uppercase">{item.currency}</span>
+                          <span className="text-base font-bold text-accent">
+                            {item.currency === "NGN" ? "₦" : item.currency === "USD" ? "$" : item.currency === "EUR" ? "€" : item.currency === "GBP" ? "£" : `${item.currency} `}
+                            {parseFloat(item.price).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                          </span>
                         </>
                       ) : (
-                        <span className="text-xs text-secondary font-light">Price not specified</span>
+                        <span className="text-xs text-secondary/70 font-light italic">Price not specified</span>
                       )}
                     </div>
 
                     {item.store && (
-                      <span className="inline-block mt-1 text-[11px] text-secondary font-medium uppercase tracking-wider bg-soft px-2 py-0.5 rounded border border-border/50">
+                      <span className="inline-block mt-2 text-[10px] text-secondary font-medium uppercase tracking-wider bg-soft px-2 py-0.5 rounded border border-border/50">
                         {item.store}
                       </span>
                     )}
 
                     {item.notes && (
-                      <p className="text-xs text-secondary mt-3 line-clamp-3 font-light leading-relaxed border-t border-border/30 pt-2.5">
+                      <p className="text-xs text-secondary mt-3 line-clamp-2 font-light leading-relaxed border-t border-border/30 pt-2.5">
                         {item.notes}
                       </p>
                     )}
                   </div>
 
-                  <div className="px-5 pb-4 pt-2 flex items-center justify-between border-t border-border/40 bg-soft/30">
-                    <span className="text-[10px] text-secondary font-light">Qty: {item.quantity}</span>
-                    <button
-                      onClick={() => handleDeleteItem(item.id)}
-                      className="text-red-500 hover:text-red-700 transition-colors p-1 rounded hover:bg-red-50"
-                      title="Remove from list"
-                    >
-                      <Trash2 className="w-4 h-4" />
-                    </button>
+                  {/* Card Actions: Edit & Delete */}
+                  <div className="px-5 pb-3.5 pt-2.5 flex items-center justify-between border-t border-border/40 bg-soft/40">
+                    <span className="text-[11px] text-secondary font-light">Qty: {item.quantity}</span>
+                    <div className="flex items-center space-x-1">
+                      <button
+                        onClick={() => openEditItemModal(item)}
+                        className="text-secondary hover:text-primary transition-colors p-1.5 rounded hover:bg-white"
+                        title="Edit Wish"
+                      >
+                        <Pencil className="w-3.5 h-3.5" />
+                      </button>
+                      <button
+                        onClick={() => handleDeleteItem(item.id)}
+                        className="text-red-500 hover:text-red-700 transition-colors p-1.5 rounded hover:bg-red-50"
+                        title="Remove from list"
+                      >
+                        <Trash2 className="w-3.5 h-3.5" />
+                      </button>
+                    </div>
                   </div>
                 </div>
               ))}
             </div>
           )}
 
-          {/* Edit settings modal */}
+          {/* Edit Wish Item Modal */}
+          {editingItem && (
+            <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-primary/25 backdrop-blur-sm overflow-y-auto">
+              <div className="bg-white rounded-xl border border-border max-w-lg w-full p-6 relative my-8 shadow-xl">
+                <button
+                  onClick={() => setEditingItem(null)}
+                  className="absolute top-4 right-4 text-secondary hover:text-primary p-1 rounded-full hover:bg-soft"
+                >
+                  <X className="w-5 h-5" />
+                </button>
+                
+                <h3 className="text-xl font-normal text-primary font-editorial mb-1">
+                  Edit Wish
+                </h3>
+                <p className="text-xs text-secondary mb-5 font-light">
+                  Update the price, photo, link, or notes for this item.
+                </p>
+
+                <form onSubmit={handleSaveEditedItem} className="space-y-4">
+                  {/* Name */}
+                  <div>
+                    <label className="block text-[11px] font-semibold text-secondary uppercase tracking-wider mb-1">
+                      Product Name *
+                    </label>
+                    <input
+                      type="text"
+                      required
+                      className="w-full px-3.5 py-2 border border-border rounded-lg text-sm focus:outline-none focus:border-accent"
+                      value={editItemName}
+                      onChange={(e) => setEditItemName(e.target.value)}
+                    />
+                  </div>
+
+                  {/* Image Uploader & Preview */}
+                  <div>
+                    <label className="block text-[11px] font-semibold text-secondary uppercase tracking-wider mb-1">
+                      Product Image
+                    </label>
+                    <div className="flex items-center space-x-3">
+                      <div className="h-16 w-16 border border-border rounded-lg overflow-hidden relative bg-soft shrink-0 flex items-center justify-center">
+                        {editItemImage ? (
+                          <>
+                            {/* eslint-disable-next-line @next/next/no-img-element */}
+                            <img src={editItemImage} alt="" className="h-full w-full object-cover" />
+                            <button
+                              type="button"
+                              onClick={() => setEditItemImage("")}
+                              className="absolute top-0.5 right-0.5 p-0.5 bg-primary/80 rounded-full text-white hover:bg-red-600"
+                            >
+                              <X className="w-2.5 h-2.5" />
+                            </button>
+                          </>
+                        ) : (
+                          <Upload className="w-4 h-4 text-secondary/40" />
+                        )}
+                      </div>
+
+                      <div className="flex-1">
+                        <input
+                          type="file"
+                          accept="image/*"
+                          ref={editItemFileInputRef}
+                          className="hidden"
+                          onChange={handleEditItemImageUpload}
+                        />
+                        <button
+                          type="button"
+                          disabled={editItemImageUploading}
+                          onClick={() => editItemFileInputRef.current?.click()}
+                          className="px-3.5 py-1.5 border border-border hover:border-accent rounded-md text-xs font-semibold text-secondary hover:text-primary transition-all bg-white flex items-center space-x-1.5 shadow-sm disabled:opacity-50"
+                        >
+                          <Upload className="w-3.5 h-3.5" />
+                          <span>{editItemImageUploading ? "Uploading..." : "Upload New Photo"}</span>
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Price & Currency */}
+                  <div className="grid grid-cols-3 gap-3">
+                    <div className="col-span-2">
+                      <label className="block text-[11px] font-semibold text-secondary uppercase tracking-wider mb-1">
+                        Price (Optional)
+                      </label>
+                      <input
+                        type="number"
+                        step="0.01"
+                        placeholder="0.00"
+                        className="w-full px-3.5 py-2 border border-border rounded-lg text-sm focus:outline-none focus:border-accent"
+                        value={editItemPrice}
+                        onChange={(e) => setEditItemPrice(e.target.value)}
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-[11px] font-semibold text-secondary uppercase tracking-wider mb-1">
+                        Currency
+                      </label>
+                      <select
+                        className="w-full px-3.5 py-2 border border-border rounded-lg text-sm focus:outline-none focus:border-accent bg-white"
+                        value={editItemCurrency}
+                        onChange={(e) => setEditItemCurrency(e.target.value)}
+                      >
+                        <option value="NGN">NGN (₦)</option>
+                        <option value="USD">USD ($)</option>
+                        <option value="EUR">EUR (€)</option>
+                        <option value="GBP">GBP (£)</option>
+                        <option value="JPY">JPY (¥)</option>
+                      </select>
+                    </div>
+                  </div>
+
+                  {/* Store & Quantity */}
+                  <div className="grid grid-cols-2 gap-3">
+                    <div>
+                      <label className="block text-[11px] font-semibold text-secondary uppercase tracking-wider mb-1">
+                        Store
+                      </label>
+                      <input
+                        type="text"
+                        placeholder="e.g. Jumia, Amazon"
+                        className="w-full px-3.5 py-2 border border-border rounded-lg text-sm focus:outline-none focus:border-accent"
+                        value={editItemStore}
+                        onChange={(e) => setEditItemStore(e.target.value)}
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-[11px] font-semibold text-secondary uppercase tracking-wider mb-1">
+                        Quantity
+                      </label>
+                      <input
+                        type="number"
+                        min="1"
+                        className="w-full px-3.5 py-2 border border-border rounded-lg text-sm focus:outline-none focus:border-accent"
+                        value={editItemQuantity}
+                        onChange={(e) => setEditItemQuantity(e.target.value)}
+                      />
+                    </div>
+                  </div>
+
+                  {/* Product URL */}
+                  <div>
+                    <label className="block text-[11px] font-semibold text-secondary uppercase tracking-wider mb-1">
+                      Product URL
+                    </label>
+                    <input
+                      type="url"
+                      placeholder="https://..."
+                      className="w-full px-3.5 py-2 border border-border rounded-lg text-sm focus:outline-none focus:border-accent"
+                      value={editItemUrl}
+                      onChange={(e) => setEditItemUrl(e.target.value)}
+                    />
+                  </div>
+
+                  {/* Notes */}
+                  <div>
+                    <label className="block text-[11px] font-semibold text-secondary uppercase tracking-wider mb-1">
+                      Notes / Size / Color
+                    </label>
+                    <textarea
+                      placeholder="Add details, size, preferred color..."
+                      className="w-full px-3.5 py-2 border border-border rounded-lg text-sm h-16 focus:outline-none focus:border-accent resize-none font-light"
+                      value={editItemNotes}
+                      onChange={(e) => setEditItemNotes(e.target.value)}
+                    />
+                  </div>
+
+                  {/* Priority */}
+                  <div>
+                    <label className="block text-[11px] font-semibold text-secondary uppercase tracking-wider mb-1">
+                      Priority
+                    </label>
+                    <select
+                      className="w-full px-3.5 py-2 border border-border rounded-lg text-sm focus:outline-none focus:border-accent bg-white"
+                      value={editItemPriority}
+                      onChange={(e) => setEditItemPriority(e.target.value)}
+                    >
+                      <option value="nice_to_have">Nice to have</option>
+                      <option value="really_want">Really want</option>
+                      <option value="must_have">Must have! 🔥</option>
+                    </select>
+                  </div>
+
+                  <div className="flex gap-3 pt-3">
+                    <button
+                      type="button"
+                      onClick={() => setEditingItem(null)}
+                      className="w-1/3 py-2.5 border border-border rounded-lg text-xs font-semibold text-secondary hover:text-primary hover:bg-soft"
+                    >
+                      Cancel
+                    </button>
+                    <button
+                      type="submit"
+                      disabled={savingItem}
+                      className="w-2/3 py-2.5 bg-accent text-white rounded-lg text-xs font-semibold hover:bg-accent-dark transition-colors shadow-sm disabled:opacity-50 flex items-center justify-center space-x-2"
+                    >
+                      {savingItem ? (
+                        <>
+                          <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                          <span>Saving Changes...</span>
+                        </>
+                      ) : (
+                        <span>Save Changes</span>
+                      )}
+                    </button>
+                  </div>
+                </form>
+              </div>
+            </div>
+          )}
+
+          {/* Edit Wishlist Settings Modal */}
           {isEditSettingsOpen && (
             <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-primary/20 backdrop-blur-sm">
-              <div className="bg-white rounded-lg border border-border max-w-md w-full p-6 relative">
+              <div className="bg-white rounded-xl border border-border max-w-md w-full p-6 relative shadow-xl">
                 <button
                   onClick={() => setIsEditSettingsOpen(false)}
                   className="absolute top-4 right-4 text-secondary hover:text-primary"
                 >
                   <X className="w-5 h-5" />
                 </button>
-                <h3 className="text-lg font-normal text-primary font-editorial mb-4">
+                <h3 className="text-xl font-normal text-primary font-editorial mb-4">
                   Wishlist Settings
                 </h3>
 
@@ -421,7 +680,7 @@ export default function WishlistDetailPage({ params }: { params: Promise<{ uuid:
                     <input
                       type="text"
                       required
-                      className="w-full px-3 py-2 border border-border rounded text-sm focus:outline-none focus:border-accent"
+                      className="w-full px-3.5 py-2 border border-border rounded-lg text-sm focus:outline-none focus:border-accent"
                       value={editName}
                       onChange={(e) => setEditName(e.target.value)}
                     />
@@ -432,22 +691,54 @@ export default function WishlistDetailPage({ params }: { params: Promise<{ uuid:
                       Description
                     </label>
                     <textarea
-                      className="w-full px-3 py-2 border border-border rounded text-sm h-24 focus:outline-none focus:border-accent resize-none"
+                      className="w-full px-3.5 py-2 border border-border rounded-lg text-sm h-24 focus:outline-none focus:border-accent resize-none font-light"
                       value={editDescription}
                       onChange={(e) => setEditDescription(e.target.value)}
                     />
                   </div>
 
+                  {/* Cover image uploader */}
                   <div>
                     <label className="block text-[11px] font-semibold text-secondary uppercase tracking-wider mb-1">
-                      Cover Image URL
+                      Cover Image
                     </label>
-                    <input
-                      type="url"
-                      className="w-full px-3 py-2 border border-border rounded text-sm focus:outline-none focus:border-accent"
-                      value={editCoverImage}
-                      onChange={(e) => setEditCoverImage(e.target.value)}
-                    />
+                    <div className="flex items-center space-x-3">
+                      <div className="h-14 w-14 border border-border rounded-lg overflow-hidden relative bg-soft shrink-0 flex items-center justify-center">
+                        {editCoverImage ? (
+                          <>
+                            {/* eslint-disable-next-line @next/next/no-img-element */}
+                            <img src={editCoverImage} alt="" className="h-full w-full object-cover" />
+                            <button
+                              type="button"
+                              onClick={() => setEditCoverImage("")}
+                              className="absolute top-0.5 right-0.5 p-0.5 bg-primary/80 rounded-full text-white hover:bg-red-600"
+                            >
+                              <X className="w-2 h-2" />
+                            </button>
+                          </>
+                        ) : (
+                          <Upload className="w-4 h-4 text-secondary/40" />
+                        )}
+                      </div>
+
+                      <div className="flex-1">
+                        <input
+                          type="file"
+                          accept="image/*"
+                          ref={coverFileInputRef}
+                          className="hidden"
+                          onChange={handleCoverUpload}
+                        />
+                        <button
+                          type="button"
+                          disabled={coverUploading}
+                          onClick={() => coverFileInputRef.current?.click()}
+                          className="px-3 py-1.5 border border-border rounded-md text-xs font-semibold text-secondary hover:text-primary transition-all bg-white shadow-sm disabled:opacity-50"
+                        >
+                          {coverUploading ? "Uploading..." : "Upload Cover"}
+                        </button>
+                      </div>
+                    </div>
                   </div>
 
                   <div>
@@ -455,7 +746,7 @@ export default function WishlistDetailPage({ params }: { params: Promise<{ uuid:
                       Visibility
                     </label>
                     <select
-                      className="w-full px-3 py-2 border border-border rounded text-sm focus:outline-none focus:border-accent bg-white"
+                      className="w-full px-3.5 py-2 border border-border rounded-lg text-sm focus:outline-none focus:border-accent bg-white"
                       value={editVisibility}
                       onChange={(e) => setEditVisibility(e.target.value)}
                     >
@@ -465,17 +756,17 @@ export default function WishlistDetailPage({ params }: { params: Promise<{ uuid:
                     </select>
                   </div>
 
-                  <div className="flex gap-3 pt-2">
+                  <div className="flex gap-3 pt-3">
                     <button
                       type="button"
                       onClick={handleDeleteWishlist}
-                      className="flex-grow py-2 border border-red-200 text-red-500 rounded hover:bg-red-50 text-sm font-medium transition-colors"
+                      className="flex-grow py-2.5 border border-red-200 text-red-500 rounded-lg hover:bg-red-50 text-xs font-semibold transition-colors"
                     >
                       Delete Wishlist
                     </button>
                     <button
                       type="submit"
-                      className="flex-grow py-2 bg-accent text-white rounded hover:bg-accent-dark text-sm font-medium transition-colors"
+                      className="flex-grow py-2.5 bg-accent text-white rounded-lg hover:bg-accent-dark text-xs font-semibold transition-colors shadow-sm"
                     >
                       Save Changes
                     </button>
@@ -484,8 +775,6 @@ export default function WishlistDetailPage({ params }: { params: Promise<{ uuid:
               </div>
             </div>
           )}
-
-
         </main>
       </div>
 

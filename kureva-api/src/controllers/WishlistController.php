@@ -257,10 +257,27 @@ class WishlistController {
             $priority = $input['priority'] ?? 'nice_to_have';
             $quantity = isset($input['quantity']) ? intval($input['quantity']) : 1;
 
+            if (empty($name) && !empty($productUrl)) {
+                try {
+                    $parsed = \Kureva\Services\ProductParserService::parse($productUrl);
+                    $name = $parsed['name'] ?? '';
+                    if (empty($imageUrl) && !empty($parsed['image_url'])) $imageUrl = $parsed['image_url'];
+                    if (empty($store) && !empty($parsed['store'])) $store = $parsed['store'];
+                    if ($price === null && !empty($parsed['price'])) $price = $parsed['price'];
+                    if (empty($currency) || $currency === 'USD') $currency = $parsed['currency'] ?: 'USD';
+                    if (empty($notes) && !empty($parsed['description'])) $notes = $parsed['description'];
+                } catch (\Exception $e) {}
+            }
+
             if (empty($name)) {
-                http_response_code(400);
-                echo json_encode(['success' => false, 'error' => ['message' => 'Item name is required']]);
-                return;
+                if (!empty($productUrl)) {
+                    $host = parse_url($productUrl, PHP_URL_HOST) ?? 'Link';
+                    $name = "Product from " . preg_replace('/^www\./', '', $host);
+                } else {
+                    http_response_code(400);
+                    echo json_encode(['success' => false, 'error' => ['message' => 'Please provide a product name or paste a link.']]);
+                    return;
+                }
             }
 
             $stmtAdd = $db->prepare("

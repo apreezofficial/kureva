@@ -5,9 +5,14 @@ namespace Kureva\Services;
 class ProductParserService {
 
     public static function parse(string $url): array {
-        $html = self::fetchSafeUrl($url);
+        $cleanUrl = trim($url);
+        if (!filter_var($cleanUrl, FILTER_VALIDATE_URL)) {
+            return self::emptyResult($cleanUrl);
+        }
+
+        $html = self::fetchSafeUrl($cleanUrl);
         if (!$html) {
-            return self::emptyResult($url);
+            return self::emptyResult($cleanUrl);
         }
 
         // Clean up formatting
@@ -21,25 +26,37 @@ class ProductParserService {
         // Try JSON-LD first
         $jsonLdData = self::parseJsonLd($xpath);
         
-        // Try OpenGraph
+        // Try OpenGraph & Meta
         $ogData = self::parseOpenGraph($xpath);
 
-        // Merge and resolve defaults
-        $title = $jsonLdData['title'] ?: $ogData['title'] ?: self::extractTitleTag($dom);
-        $image = $jsonLdData['image'] ?: $ogData['image'] ?: self::extractFirstImage($xpath);
+        // Try HTML Elements (H1, Title tag, etc.)
+        $htmlTitle = self::extractTitleTag($dom, $xpath);
+        $htmlImage = self::extractFirstImage($xpath);
+        $slugTitle = self::extractTitleFromSlug($cleanUrl);
+
+        // Merge and resolve best values
+        $title = $jsonLdData['title'] ?: $ogData['title'] ?: $htmlTitle ?: $slugTitle ?: 'Product from Link';
+        $title = self::cleanTitle($title);
+
+        $image = $jsonLdData['image'] ?: $ogData['image'] ?: $htmlImage ?: '';
+        // If relative URL for image, make absolute
+        if ($image && strpos($image, '//') === 0) {
+            $image = 'https:' . $image;
+        }
+
         $price = $jsonLdData['price'] ?: $ogData['price'] ?: self::extractPriceRegex($html);
-        $currency = $jsonLdData['currency'] ?: $ogData['currency'] ?: 'USD';
+        $currency = $jsonLdData['currency'] ?: $ogData['currency'] ?: self::detectCurrency($cleanUrl, $html);
         $description = $jsonLdData['description'] ?: $ogData['description'] ?: '';
-        $store = self::detectStore($url, $xpath);
+        $store = self::detectStore($cleanUrl, $xpath);
 
         return [
-            'name' => $title ?: 'External Product',
+            'name' => $title,
             'image_url' => $image,
-            'product_url' => $url,
+            'product_url' => $cleanUrl,
             'store' => $store,
-            'price' => $price ? floatval($price) : null,
+            'price' => $price !== null && $price !== '' ? floatval($price) : null,
             'currency' => $currency,
-            'description' => substr($description, 0, 500)
+            'description' => substr(trim(strip_tags($description)), 0, 500)
         ];
     }
 
@@ -51,25 +68,46 @@ class ProductParserService {
             $json = json_decode($script->nodeValue, true);
             if (!$json) continue;
 
-            // Handle nested graphs
-            $items = isset($json['@graph']) ? $json['@graph'] : [$json];
+            // Handle nested graphs or arrays
+            $items = [];
+            if (isset($json['@graph']) && is_array($json['@graph'])) {
+                $items = $json['@graph'];
+            } elseif (is_array($json) && array_is_list($json)) {
+                $items = $json;
+            } else {
+                $items = [$json];
+            }
+
             foreach ($items as $item) {
-                if (isset($item['@type']) && strtolower($item['@type']) === 'product') {
+                if (!is_array($item)) continue;
+                $type = strtolower($item['@type'] ?? '');
+                
+                if (in_array($type, ['product', 'individualproduct', 'itempage', 'productmodel'])) {
                     $result['title'] = $item['name'] ?? null;
                     $result['description'] = $item['description'] ?? null;
                     
                     if (isset($item['image'])) {
-                        $result['image'] = is_array($item['image']) ? ($item['image'][0] ?? null) : $item['image'];
+                        if (is_array($item['image'])) {
+                            $first = $item['image'][0] ?? null;
+                            $result['image'] = is_array($first) ? ($first['url'] ?? null) : $first;
+                        } else {
+                            $result['image'] = $item['image'];
+                        }
                     }
 
                     if (isset($item['offers'])) {
                         $offers = $item['offers'];
-                        if (isset($offers['@type']) && strtolower($offers['@type']) === 'aggregateoffer') {
-                            $result['price'] = $offers['lowPrice'] ?? $offers['highPrice'] ?? null;
-                            $result['currency'] = $offers['priceCurrency'] ?? null;
-                        } else {
-                            $result['price'] = $offers['price'] ?? null;
-                            $result['currency'] = $offers['priceCurrency'] ?? null;
+                        if (is_array($offers)) {
+                            if (isset($offers['price'])) {
+                                $result['price'] = $offers['price'];
+                                $result['currency'] = $offers['priceCurrency'] ?? null;
+                            } elseif (isset($offers['lowPrice'])) {
+                                $result['price'] = $offers['lowPrice'];
+                                $result['currency'] = $offers['priceCurrency'] ?? null;
+                            } elseif (array_is_list($offers) && isset($offers[0]['price'])) {
+                                $result['price'] = $offers[0]['price'];
+                                $result['currency'] = $offers[0]['priceCurrency'] ?? null;
+                            }
                         }
                     }
                     break 2;
@@ -83,20 +121,23 @@ class ProductParserService {
         $result = ['title' => null, 'image' => null, 'price' => null, 'currency' => null, 'description' => null];
 
         $metaTags = [
-            'title' => ['og:title', 'twitter:title'],
-            'image' => ['og:image', 'og:image:secure_url', 'twitter:image'],
-            'price' => ['product:price:amount', 'og:price:amount', 'price'],
+            'title' => ['og:title', 'twitter:title', 'title'],
+            'image' => ['og:image', 'og:image:secure_url', 'twitter:image', 'twitter:image:src', 'image'],
+            'price' => ['product:price:amount', 'og:price:amount', 'price', 'twitter:data1'],
             'currency' => ['product:price:currency', 'og:price:currency', 'currency'],
             'description' => ['og:description', 'twitter:description', 'description']
         ];
 
         foreach ($metaTags as $field => $names) {
             foreach ($names as $name) {
-                $query = sprintf('//meta[@property="%1$s" or @name="%1$s"]', $name);
+                $query = sprintf('//meta[@property="%1$s" or @name="%1$s" or @itemprop="%1$s"]', $name);
                 $nodes = $xpath->query($query);
-                if ($nodes->length > 0) {
-                    $result[$field] = $nodes->item(0)->getAttribute('content');
-                    break;
+                if ($nodes && $nodes->length > 0) {
+                    $content = $nodes->item(0)->getAttribute('content');
+                    if (!empty($content)) {
+                        $result[$field] = trim($content);
+                        break;
+                    }
                 }
             }
         }
@@ -104,32 +145,108 @@ class ProductParserService {
         return $result;
     }
 
-    private static function extractTitleTag(\DOMDocument $dom): ?string {
+    private static function extractTitleTag(\DOMDocument $dom, \DOMXPath $xpath): ?string {
+        // Try h1 with product class first
+        $h1s = $xpath->query('//h1');
+        if ($h1s && $h1s->length > 0) {
+            $h1Text = trim($h1s->item(0)->textContent);
+            if (strlen($h1Text) > 3 && strlen($h1Text) < 200) {
+                return $h1Text;
+            }
+        }
+
         $titles = $dom->getElementsByTagName('title');
         if ($titles->length > 0) {
-            return trim($titles->item(0)->nodeValue);
+            return trim($titles->item(0)->textContent);
         }
         return null;
     }
 
+    private static function cleanTitle(string $title): string {
+        $cleaned = trim($title);
+        // Remove trailing store suffix like " | Jumia Nigeria", " - Amazon.com", " : Target"
+        $cleaned = preg_replace('/\s*[-|–—:]\s*(Jumia.*|Amazon.*|AliExpress.*|eBay.*|Zara.*|ASOS.*|Shopify.*|Walmart.*|Target.*)$/i', '', $cleaned);
+        return $cleaned ?: $title;
+    }
+
+    private static function extractTitleFromSlug(string $url): string {
+        $parsed = parse_url($url);
+        $path = $parsed['path'] ?? '';
+        $segments = array_filter(explode('/', $path));
+        if (empty($segments)) return '';
+
+        // Pick longest slug segment
+        $bestSegment = '';
+        foreach (array_reverse($segments) as $seg) {
+            $segClean = preg_replace('/\.html?$/i', '', $seg);
+            $segClean = preg_replace('/^[a-z0-9]+-[a-z0-9]+$/i', '', $segClean);
+            if (strlen($segClean) > strlen($bestSegment)) {
+                $bestSegment = $segClean;
+            }
+        }
+
+        if ($bestSegment) {
+            // Remove numeric product IDs from ends
+            $bestSegment = preg_replace('/-[0-9]{4,}$/', '', $bestSegment);
+            $words = preg_split('/[-_]+/', $bestSegment);
+            $words = array_map('ucfirst', array_filter($words));
+            return implode(' ', $words);
+        }
+
+        return '';
+    }
+
     private static function extractFirstImage(\DOMXPath $xpath): ?string {
-        // Fallback to first large image
-        $images = $xpath->query('//img[@src]');
-        foreach ($images as $img) {
-            $src = $img->getAttribute('src');
-            if (preg_match('/\.(jpg|jpeg|png|webp)/i', $src)) {
-                return $src;
+        // Look for typical ecommerce high-res product images
+        $queries = [
+            '//img[@id="landingImage"]/@src',
+            '//img[@id="imgBlkFront"]/@src',
+            '//img[contains(@class, "product")]/@src',
+            '//img[contains(@class, "gallery")]/@src',
+            '//img[@data-src]/@data-src',
+            '//img[@src]/@src'
+        ];
+
+        foreach ($queries as $q) {
+            $nodes = $xpath->query($q);
+            if ($nodes && $nodes->length > 0) {
+                foreach ($nodes as $node) {
+                    $src = $node->nodeValue;
+                    if (preg_match('/\.(jpg|jpeg|png|webp)/i', $src) && !preg_match('/(logo|icon|loader|placeholder|spinner)/i', $src)) {
+                        return $src;
+                    }
+                }
             }
         }
         return null;
     }
 
     private static function extractPriceRegex(string $html): ?string {
-        // Regex fallback for price matching like $99.99 or 99,99 €
-        if (preg_match('/\$([0-9]+(?:\.[0-9]{2})?)/', $html, $matches)) {
+        // Price matching for various currencies
+        if (preg_match('/(?:₦|NGN|GH₵|\$|€|£|¥)\s*([0-9]{1,3}(?:,[0-9]{3})*(?:\.[0-9]{2})?)/i', $html, $matches)) {
+            return str_replace(',', '', $matches[1]);
+        }
+        if (preg_match('/([0-9]+(?:\.[0-9]{2}))\s*(?:USD|EUR|GBP|NGN)/i', $html, $matches)) {
             return $matches[1];
         }
         return null;
+    }
+
+    private static function detectCurrency(string $url, string $html): string {
+        $host = strtolower(parse_url($url, PHP_URL_HOST) ?? '');
+        if (str_contains($host, '.ng') || str_contains($host, 'jumia.com.ng') || str_contains($host, 'konga.com') || str_contains($html, '₦') || str_contains($html, 'NGN')) {
+            return 'NGN';
+        }
+        if (str_contains($host, '.uk') || str_contains($host, '.co.uk') || str_contains($html, '£') || str_contains($html, 'GBP')) {
+            return 'GBP';
+        }
+        if (str_contains($host, '.de') || str_contains($host, '.fr') || str_contains($host, '.es') || str_contains($html, '€') || str_contains($html, 'EUR')) {
+            return 'EUR';
+        }
+        if (str_contains($host, '.jp') || str_contains($html, '¥') || str_contains($html, 'JPY')) {
+            return 'JPY';
+        }
+        return 'USD';
     }
 
     private static function detectStore(string $url, \DOMXPath $xpath): string {
@@ -138,30 +255,50 @@ class ProductParserService {
         $host = preg_replace('/^www\./', '', $host);
 
         // Check OpenGraph site_name
-        $siteNodes = $xpath->query('//meta[@property="og:site_name"]');
-        if ($siteNodes->length > 0) {
-            return trim($siteNodes->item(0)->getAttribute('content'));
+        $siteNodes = $xpath->query('//meta[@property="og:site_name"]/@content');
+        if ($siteNodes && $siteNodes->length > 0) {
+            $siteName = trim($siteNodes->item(0)->nodeValue);
+            if (!empty($siteName)) {
+                return $siteName;
+            }
         }
+
+        // Known stores
+        if (str_contains($host, 'jumia')) return 'Jumia';
+        if (str_contains($host, 'amazon')) return 'Amazon';
+        if (str_contains($host, 'konga')) return 'Konga';
+        if (str_contains($host, 'aliexpress')) return 'AliExpress';
+        if (str_contains($host, 'shein')) return 'SHEIN';
+        if (str_contains($host, 'asos')) return 'ASOS';
+        if (str_contains($host, 'zara')) return 'Zara';
+        if (str_contains($host, 'nike')) return 'Nike';
+        if (str_contains($host, 'apple')) return 'Apple';
+        if (str_contains($host, 'ebay')) return 'eBay';
+        if (str_contains($host, 'walmart')) return 'Walmart';
+        if (str_contains($host, 'target')) return 'Target';
 
         return ucfirst(explode('.', $host)[0]);
     }
 
     private static function emptyResult(string $url): array {
+        $slugTitle = self::extractTitleFromSlug($url);
         $parsed = parse_url($url);
         $host = isset($parsed['host']) ? strtolower($parsed['host']) : 'External Store';
+        $store = self::detectStore($url, new \DOMXPath(new \DOMDocument()));
+
         return [
-            'name' => 'New Product',
+            'name' => $slugTitle ?: ($store ? "$store Product" : 'Gift Item'),
             'image_url' => '',
             'product_url' => $url,
-            'store' => ucfirst(explode('.', $host)[0]),
+            'store' => $store,
             'price' => null,
-            'currency' => 'USD',
+            'currency' => self::detectCurrency($url, ''),
             'description' => ''
         ];
     }
 
     /**
-     * SSRF Safe URL Fetcher
+     * SSRF Safe URL Fetcher with modern browser headers and redirect tracking
      */
     private static function fetchSafeUrl(string $url): ?string {
         $maxRedirects = 5;
@@ -174,7 +311,7 @@ class ProductParserService {
             }
 
             $host = $parsed['host'];
-            $ips = gethostbynamel($host);
+            $ips = @gethostbynamel($host);
             if (!$ips) {
                 return null;
             }
@@ -189,20 +326,28 @@ class ProductParserService {
             $ch = curl_init();
             curl_setopt($ch, CURLOPT_URL, $currentUrl);
             curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
-            curl_setopt($ch, CURLOPT_FOLLOWLOCATION, false); // Handle redirects manually to validate IP
-            curl_setopt($ch, CURLOPT_TIMEOUT, 10);
-            curl_setopt($ch, CURLOPT_USERAGENT, 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) KurevaPreviewer/1.0');
+            curl_setopt($ch, CURLOPT_FOLLOWLOCATION, false);
+            curl_setopt($ch, CURLOPT_TIMEOUT, 8);
+            curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
+            curl_setopt($ch, CURLOPT_SSL_VERIFYHOST, false);
+            curl_setopt($ch, CURLOPT_HTTPHEADER, [
+                'User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36',
+                'Accept: text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8',
+                'Accept-Language: en-US,en;q=0.9',
+                'Sec-Fetch-Dest: document',
+                'Sec-Fetch-Mode: navigate',
+                'Sec-Fetch-Site: none',
+                'Sec-Fetch-User: ?1',
+                'Upgrade-Insecure-Requests: 1'
+            ]);
             
             $output = curl_exec($ch);
             $statusCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
             
             if ($statusCode >= 300 && $statusCode < 400) {
                 $redirectUrl = curl_getinfo($ch, CURLINFO_REDIRECT_URL);
-                if (!$redirectUrl) {
-                    $header = curl_exec($ch);
-                    if (preg_match('/Location:\s*(\S+)/i', $header, $matches)) {
-                        $redirectUrl = $matches[1];
-                    }
+                if (!$redirectUrl && preg_match('/Location:\s*(\S+)/i', $output, $matches)) {
+                    $redirectUrl = $matches[1];
                 }
 
                 if (!$redirectUrl) {
@@ -210,7 +355,6 @@ class ProductParserService {
                     break;
                 }
 
-                // Handle relative paths
                 if (strpos($redirectUrl, '/') === 0) {
                     $redirectUrl = ($parsed['scheme'] ?? 'https') . '://' . $host . $redirectUrl;
                 }
@@ -221,27 +365,26 @@ class ProductParserService {
             }
 
             curl_close($ch);
-            return $output;
+            return ($statusCode >= 200 && $statusCode < 400 && $output) ? $output : null;
         }
 
         return null;
     }
 
     private static function isPrivateIp(string $ip): bool {
-        // IPv4 validation
         $ipLong = ip2long($ip);
         if ($ipLong === false) {
-            return true; // If we can't parse it, treat as unsafe
+            return true;
         }
 
         $privateRanges = [
-            '127.0.0.0' => '127.255.255.255', // Loopback
-            '10.0.0.0' => '10.255.255.255',   // Class A private
-            '172.16.0.0' => '172.31.255.255', // Class B private
-            '192.168.0.0' => '192.168.255.255', // Class C private
-            '169.254.0.0' => '169.254.255.255', // Link local
-            '224.0.0.0' => '239.255.255.255', // Multicast
-            '0.0.0.0' => '0.255.255.255',     // Local network
+            '127.0.0.0' => '127.255.255.255',
+            '10.0.0.0' => '10.255.255.255',
+            '172.16.0.0' => '172.31.255.255',
+            '192.168.0.0' => '192.168.255.255',
+            '169.254.0.0' => '169.254.255.255',
+            '224.0.0.0' => '239.255.255.255',
+            '0.0.0.0' => '0.255.255.255',
         ];
 
         foreach ($privateRanges as $start => $end) {

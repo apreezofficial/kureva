@@ -261,13 +261,13 @@ export default function Dashboard() {
               </p>
             </div>
             <div className="flex space-x-3">
-              <button
-                onClick={() => setIsQuickAddOpen(true)}
+              <Link
+                href="/dashboard/wishes/new"
                 className="flex items-center space-x-1.5 px-4 py-2 border border-border rounded text-sm text-secondary hover:text-primary hover:bg-soft transition-colors font-medium"
               >
                 <Plus className="w-4 h-4" />
                 <span>Add Wish</span>
-              </button>
+              </Link>
               <Link
                 href="/dashboard/wishlists/new"
                 className="flex items-center space-x-1.5 px-4 py-2 border border-border rounded text-sm text-primary hover:bg-soft transition-colors font-medium"
@@ -372,195 +372,7 @@ export default function Dashboard() {
 
 
 
-        {/* Quick Add Wish Modal */}
-        {isQuickAddOpen && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-primary/20 backdrop-blur-sm overflow-y-auto">
-            <div className="bg-white rounded-lg border border-border max-w-lg w-full p-6 relative my-8">
-              <button
-                onClick={() => setIsQuickAddOpen(false)}
-                className="absolute top-4 right-4 text-secondary hover:text-primary"
-              >
-                <X className="w-5 h-5" />
-              </button>
-              <h3 className="text-lg font-normal text-primary font-editorial mb-4">
-                Quick Add Wish
-              </h3>
 
-              {/* Import URL field */}
-              <div className="mb-6 p-4 bg-soft rounded-lg border border-border/50">
-                <label className="block text-[11px] font-semibold text-secondary uppercase tracking-wider mb-1">
-                  Paste product link (Jumia, Amazon, Shopify, etc.)
-                </label>
-                <div className="flex gap-2">
-                  <input
-                    type="url"
-                    placeholder="https://www.jumia.com/..."
-                    className="flex-grow px-3 py-2 border border-border rounded text-sm focus:outline-none focus:border-accent"
-                    value={quickAddUrl}
-                    onChange={(e) => setQuickAddUrl(e.target.value)}
-                  />
-                  <button
-                    type="button"
-                    disabled={quickAddImporting}
-                    onClick={handleQuickAddUrlPreview}
-                    className="px-4 py-2 border border-accent text-accent font-medium rounded text-xs hover:bg-accent/5 transition-colors disabled:opacity-50"
-                  >
-                    {quickAddImporting ? "Parsing..." : "Auto Fill"}
-                  </button>
-                </div>
-              </div>
-
-              <form onSubmit={handleQuickAddSubmit} className="space-y-4">
-                {quickAddError && (
-                  <div className="bg-red-50 text-red-600 text-xs p-2.5 rounded mb-4 text-center border border-red-100">
-                    {quickAddError}
-                  </div>
-                )}
-
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  <div className="sm:col-span-2">
-                    <label className="block text-[11px] font-semibold text-secondary uppercase tracking-wider mb-1">
-                      Add to Wishlist *
-                    </label>
-                    <select
-                      required
-                      className="w-full px-3 py-2 border border-border rounded text-sm focus:outline-none focus:border-accent bg-white"
-                      value={quickAddWishlistUuid}
-                      onChange={(e) => setQuickAddWishlistUuid(e.target.value)}
-                    >
-                      <option value="">-- Choose a collection --</option>
-                      {wishlists.map((w) => (
-                        <option key={w.uuid} value={w.uuid}>
-                          {w.name} ({w.visibility})
-                        </option>
-                      ))}
-                    </select>
-                  </div>
-
-                  <div className="sm:col-span-2">
-                    <label className="block text-[11px] font-semibold text-secondary uppercase tracking-wider mb-1">
-                      Product Name *
-                    </label>
-                    <input
-                      type="text"
-                      required
-                      placeholder="Sony WH-1000XM4 Headphones"
-                      className="w-full px-3 py-2 border border-border rounded text-sm focus:outline-none focus:border-accent"
-                      value={quickAddName}
-                      onChange={(e) => setQuickAddName(e.target.value)}
-                    />
-                  </div>
-
-                  <div>
-                    <label className="block text-[11px] font-semibold text-secondary uppercase tracking-wider mb-1">
-                      Price
-                    </label>
-                    <input
-                      type="number"
-                      step="0.01"
-                      placeholder="249.99"
-                      className="w-full px-3 py-2 border border-border rounded text-sm focus:outline-none focus:border-accent"
-                      value={quickAddPrice}
-                      onChange={(e) => setQuickAddPrice(e.target.value)}
-                    />
-                  </div>
-
-                  <div>
-                    <label className="block text-[11px] font-semibold text-secondary uppercase tracking-wider mb-1">
-                      Currency
-                    </label>
-                    <select
-                      className="w-full px-3 py-2 border border-border rounded text-sm focus:outline-none focus:border-accent bg-white"
-                      value={quickAddCurrency}
-                      onChange={(e) => setQuickAddCurrency(e.target.value)}
-                    >
-                      <option value="USD">USD ($)</option>
-                      <option value="EUR">EUR (€)</option>
-                      <option value="GBP">GBP (£)</option>
-                      <option value="JPY">JPY (¥)</option>
-                      <option value="NGN">NGN (₦)</option>
-                    </select>
-                  </div>
-
-                  <div>
-                    <label className="block text-[11px] font-semibold text-secondary uppercase tracking-wider mb-1">
-                      Store Name
-                    </label>
-                    <input
-                      type="text"
-                      placeholder="Jumia, Amazon"
-                      className="w-full px-3 py-2 border border-border rounded text-sm focus:outline-none focus:border-accent"
-                      value={quickAddStore}
-                      onChange={(e) => setQuickAddStore(e.target.value)}
-                    />
-                  </div>
-
-                  <div>
-                    <label className="block text-[11px] font-semibold text-secondary uppercase tracking-wider mb-1">
-                      Quantity
-                    </label>
-                    <input
-                      type="number"
-                      min="1"
-                      required
-                      className="w-full px-3 py-2 border border-border rounded text-sm focus:outline-none focus:border-accent"
-                      value={quickAddQuantity}
-                      onChange={(e) => setQuickAddQuantity(e.target.value)}
-                    />
-                  </div>
-
-                  <div className="sm:col-span-2">
-                    <label className="block text-[11px] font-semibold text-secondary uppercase tracking-wider mb-1">
-                      Image URL
-                    </label>
-                    <input
-                      type="url"
-                      placeholder="https://..."
-                      className="w-full px-3 py-2 border border-border rounded text-sm focus:outline-none focus:border-accent"
-                      value={quickAddImage}
-                      onChange={(e) => setQuickAddImage(e.target.value)}
-                    />
-                  </div>
-
-                  <div className="sm:col-span-2">
-                    <label className="block text-[11px] font-semibold text-secondary uppercase tracking-wider mb-1">
-                      Notes
-                    </label>
-                    <textarea
-                      placeholder="Add sizing, color preferences, or other notes..."
-                      className="w-full px-3 py-2 border border-border rounded text-sm h-16 focus:outline-none focus:border-accent resize-none"
-                      value={quickAddNotes}
-                      onChange={(e) => setQuickAddNotes(e.target.value)}
-                    />
-                  </div>
-
-                  <div className="sm:col-span-2">
-                    <label className="block text-[11px] font-semibold text-secondary uppercase tracking-wider mb-1">
-                      Priority
-                    </label>
-                    <select
-                      className="w-full px-3 py-2 border border-border rounded text-sm focus:outline-none focus:border-accent bg-white"
-                      value={quickAddPriority}
-                      onChange={(e) => setQuickAddPriority(e.target.value)}
-                    >
-                      <option value="nice_to_have">Nice to have</option>
-                      <option value="really_want">Really want</option>
-                      <option value="must_have">Must have! 🔥</option>
-                    </select>
-                  </div>
-                </div>
-
-                <button
-                  type="submit"
-                  disabled={quickAddSubmitting}
-                  className="w-full py-2.5 bg-accent text-white font-medium rounded hover:bg-accent-dark transition-colors text-sm disabled:opacity-50"
-                >
-                  {quickAddSubmitting ? "Saving..." : "Add to collection"}
-                </button>
-              </form>
-            </div>
-          </div>
-        )}
       </div>
 
       <MobileNav />

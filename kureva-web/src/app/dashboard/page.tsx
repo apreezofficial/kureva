@@ -334,7 +334,6 @@ export default function Dashboard() {
                     </div>
                   )}
                 </div>
-                </div>
               </div>
 
               {/* Right: Stats and Tips */}

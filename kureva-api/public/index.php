@@ -107,8 +107,19 @@ foreach ($routes as $routePattern => $controllerAction) {
         $methodName = $controllerAction[1];
         
         if (class_exists($className)) {
-            $controllerInstance = new $className();
-            call_user_func_array([$controllerInstance, $methodName], $matches);
+            try {
+                $controllerInstance = new $className();
+                call_user_func_array([$controllerInstance, $methodName], $matches);
+            } catch (\Throwable $e) {
+                http_response_code(500);
+                echo json_encode([
+                    'success' => false,
+                    'error' => [
+                        'code' => 'SERVER_ERROR',
+                        'message' => $e->getMessage()
+                    ]
+                ]);
+            }
             $matched = true;
             break;
         }

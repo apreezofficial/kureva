@@ -17,7 +17,8 @@ import {
   CheckCircle2,
   SlidersHorizontal,
   RefreshCw,
-  ShoppingBag
+  ShoppingBag,
+  Blend
 } from "lucide-react";
 
 interface StoryCardModalProps {
@@ -27,18 +28,29 @@ interface StoryCardModalProps {
   onClose: () => void;
 }
 
-type LayoutStyle = "showcase" | "hero" | "duo" | "minimal";
+type LayoutStyle = "showcase" | "hero" | "duo";
 type AspectType = "story" | "square";
-type BgStyle = "preset" | "solid";
+type BgType = "gradient_preset" | "solid_custom" | "gradient_custom";
 
-const COLOR_PRESETS = [
-  { id: "emerald", label: "Emerald Silk", bg: "#064e3b", text: "#ffffff", sub: "#a7f3d0", accent: "#34d399", card: "rgba(255, 255, 255, 0.12)", border: "rgba(255, 255, 255, 0.22)" },
-  { id: "midnight", label: "Midnight Noir", bg: "#09090b", text: "#ffffff", sub: "#a1a1aa", accent: "#10b981", card: "rgba(255, 255, 255, 0.1)", border: "rgba(255, 255, 255, 0.2)" },
-  { id: "champagne", label: "Champagne Gold", bg: "#fef3c7", text: "#1c1917", sub: "#78716c", accent: "#d97706", card: "#ffffff", border: "rgba(217, 119, 6, 0.2)" },
-  { id: "sunset", label: "Sunset Rose", bg: "#831843", text: "#ffffff", sub: "#fbcfe8", accent: "#f43f5e", card: "rgba(255, 255, 255, 0.15)", border: "rgba(255, 255, 255, 0.25)" },
-  { id: "cobalt", label: "Electric Cobalt", bg: "#1e3a8a", text: "#ffffff", sub: "#bfdbfe", accent: "#60a5fa", card: "rgba(255, 255, 255, 0.12)", border: "rgba(255, 255, 255, 0.2)" },
-  { id: "terracotta", label: "Terracotta Earth", bg: "#7c2d12", text: "#ffffff", sub: "#fed7aa", accent: "#fb923c", card: "rgba(255, 255, 255, 0.12)", border: "rgba(255, 255, 255, 0.2)" },
-  { id: "minimal", label: "Cloud Minimal", bg: "#f4f4f5", text: "#18181b", sub: "#71717a", accent: "#047857", card: "#ffffff", border: "rgba(0, 0, 0, 0.08)" }
+const GRADIENT_PRESETS = [
+  { id: "emerald_grad", label: "Emerald Silk", start: "#022c22", end: "#047857", text: "#ffffff", sub: "#a7f3d0", accent: "#34d399", card: "rgba(255, 255, 255, 0.12)", border: "rgba(255, 255, 255, 0.22)" },
+  { id: "midnight_grad", label: "Midnight Velvet", start: "#09090b", end: "#27272a", text: "#ffffff", sub: "#a1a1aa", accent: "#10b981", card: "rgba(255, 255, 255, 0.1)", border: "rgba(255, 255, 255, 0.2)" },
+  { id: "sunset_grad", label: "Sunset Blush", start: "#831843", end: "#f43f5e", text: "#ffffff", sub: "#fbcfe8", accent: "#fde047", card: "rgba(255, 255, 255, 0.15)", border: "rgba(255, 255, 255, 0.25)" },
+  { id: "cobalt_grad", label: "Royal Cobalt", start: "#1e3a8a", end: "#3b82f6", text: "#ffffff", sub: "#bfdbfe", accent: "#93c5fd", card: "rgba(255, 255, 255, 0.12)", border: "rgba(255, 255, 255, 0.2)" },
+  { id: "cyber_grad", label: "Cyberpunk Violet", start: "#4c1d95", end: "#ec4899", text: "#ffffff", sub: "#f5d0fe", accent: "#38bdf8", card: "rgba(255, 255, 255, 0.14)", border: "rgba(255, 255, 255, 0.22)" },
+  { id: "champagne_grad", label: "Champagne Gold", start: "#fef3c7", end: "#fde68a", text: "#1c1917", sub: "#78716c", accent: "#d97706", card: "#ffffff", border: "rgba(217, 119, 6, 0.2)" },
+  { id: "terracotta_grad", label: "Terracotta Glow", start: "#7c2d12", end: "#ea580c", text: "#ffffff", sub: "#fed7aa", accent: "#fdba74", card: "rgba(255, 255, 255, 0.12)", border: "rgba(255, 255, 255, 0.2)" },
+  { id: "aurora_grad", label: "Mystic Aurora", start: "#064e3b", end: "#0284c7", text: "#ffffff", sub: "#bae6fd", accent: "#34d399", card: "rgba(255, 255, 255, 0.12)", border: "rgba(255, 255, 255, 0.2)" }
+];
+
+const SOLID_PRESETS = [
+  { label: "Pure Onyx", color: "#000000" },
+  { label: "Matcha Forest", color: "#064e3b" },
+  { label: "Navy Deep", color: "#0f172a" },
+  { label: "Ruby Wine", color: "#881337" },
+  { label: "Burnt Ochre", color: "#7c2d12" },
+  { label: "Warm Sand", color: "#faf5ef" },
+  { label: "Cloud Silver", color: "#f4f4f5" }
 ];
 
 const TAGLINE_PRESETS = [
@@ -61,13 +73,18 @@ export default function WishlistStoryCardModal({
   // Customization States
   const [aspectRatio, setAspectRatio] = useState<AspectType>("story");
   const [layoutStyle, setLayoutStyle] = useState<LayoutStyle>("showcase");
-  const [selectedPresetId, setSelectedPresetId] = useState("emerald");
-  const [bgType, setBgType] = useState<BgStyle>("preset");
+  const [bgMode, setBgMode] = useState<BgType>("gradient_preset");
+  
+  // Preset & Custom Color States
+  const [selectedGradientId, setSelectedGradientId] = useState("emerald_grad");
   const [customSolidColor, setCustomSolidColor] = useState("#064e3b");
+  const [customGradStart, setCustomGradStart] = useState("#064e3b");
+  const [customGradEnd, setCustomGradEnd] = useState("#047857");
+  
   const [tagline, setTagline] = useState("✦ Wishlist Registry");
   const [showQr, setShowQr] = useState(true);
   
-  // Selected items to feature (IDs) - defaults to first 2 or 3
+  // Selected items to feature (IDs)
   const [selectedItemIds, setSelectedItemIds] = useState<number[]>([]);
   
   const [copied, setCopied] = useState(false);
@@ -121,24 +138,55 @@ export default function WishlistStoryCardModal({
     canvas.width = width;
     canvas.height = height;
 
-    // Determine Active Theme Colors
-    const activePreset = COLOR_PRESETS.find((p) => p.id === selectedPresetId) || COLOR_PRESETS[0];
-    const isCustom = bgType === "solid";
+    // 1. Determine Background Fill & Color Theme
+    let isDarkBg = true;
+    let textColor = "#FFFFFF";
+    let subTextColor = "rgba(255, 255, 255, 0.75)";
+    let cardBg = "rgba(255, 255, 255, 0.12)";
+    let cardBorder = "rgba(255, 255, 255, 0.22)";
+    let accentColor = "#34d399";
 
-    const bgColor = isCustom ? customSolidColor : activePreset.bg;
-    
-    // Check if background is dark or light for text contrast
-    const isDarkBg = isCustom ? isColorDark(customSolidColor) : selectedPresetId !== "champagne" && selectedPresetId !== "minimal";
+    if (bgMode === "gradient_preset") {
+      const activeGrad = GRADIENT_PRESETS.find((g) => g.id === selectedGradientId) || GRADIENT_PRESETS[0];
+      const grad = ctx.createLinearGradient(0, 0, width * 0.8, height);
+      grad.addColorStop(0, activeGrad.start);
+      grad.addColorStop(1, activeGrad.end);
+      ctx.fillStyle = grad;
+      ctx.fillRect(0, 0, width, height);
 
-    const textColor = isDarkBg ? "#FFFFFF" : "#18181B";
-    const subTextColor = isDarkBg ? "rgba(255, 255, 255, 0.75)" : "#52525B";
-    const cardBg = isDarkBg ? "rgba(255, 255, 255, 0.12)" : "#FFFFFF";
-    const cardBorder = isDarkBg ? "rgba(255, 255, 255, 0.22)" : "rgba(0, 0, 0, 0.08)";
-    const accentColor = isDarkBg ? (activePreset.accent || "#34d399") : "#047857";
+      isDarkBg = selectedGradientId !== "champagne_grad";
+      textColor = activeGrad.text;
+      subTextColor = activeGrad.sub;
+      cardBg = activeGrad.card;
+      cardBorder = activeGrad.border;
+      accentColor = activeGrad.accent;
 
-    // 1. Draw Background
-    ctx.fillStyle = bgColor;
-    ctx.fillRect(0, 0, width, height);
+    } else if (bgMode === "gradient_custom") {
+      const grad = ctx.createLinearGradient(0, 0, width * 0.8, height);
+      grad.addColorStop(0, customGradStart);
+      grad.addColorStop(1, customGradEnd);
+      ctx.fillStyle = grad;
+      ctx.fillRect(0, 0, width, height);
+
+      isDarkBg = isColorDark(customGradStart) || isColorDark(customGradEnd);
+      textColor = isDarkBg ? "#FFFFFF" : "#18181B";
+      subTextColor = isDarkBg ? "rgba(255, 255, 255, 0.75)" : "#52525B";
+      cardBg = isDarkBg ? "rgba(255, 255, 255, 0.12)" : "#FFFFFF";
+      cardBorder = isDarkBg ? "rgba(255, 255, 255, 0.22)" : "rgba(0, 0, 0, 0.08)";
+      accentColor = isDarkBg ? "#34d399" : "#047857";
+
+    } else {
+      // Solid custom
+      ctx.fillStyle = customSolidColor;
+      ctx.fillRect(0, 0, width, height);
+
+      isDarkBg = isColorDark(customSolidColor);
+      textColor = isDarkBg ? "#FFFFFF" : "#18181B";
+      subTextColor = isDarkBg ? "rgba(255, 255, 255, 0.75)" : "#52525B";
+      cardBg = isDarkBg ? "rgba(255, 255, 255, 0.12)" : "#FFFFFF";
+      cardBorder = isDarkBg ? "rgba(255, 255, 255, 0.22)" : "rgba(0, 0, 0, 0.08)";
+      accentColor = isDarkBg ? "#34d399" : "#047857";
+    }
 
     // Decorative ambient circles
     ctx.strokeStyle = isDarkBg ? "rgba(255, 255, 255, 0.04)" : "rgba(0, 0, 0, 0.03)";
@@ -192,11 +240,10 @@ export default function WishlistStoryCardModal({
       currentTitleY += 75;
     });
 
-    // 5. Featured Items Calculation
+    // 5. Featured Items Preload
     const featuredItems = items.filter((it) => selectedItemIds.includes(it.id));
     const activeItems = featuredItems.length > 0 ? featuredItems : items.slice(0, 3);
 
-    // Preload item images & QR
     const loadedImages: { [key: number]: HTMLImageElement | null } = {};
     for (const item of activeItems) {
       if (item.image_url) {
@@ -209,25 +256,24 @@ export default function WishlistStoryCardModal({
       qrImage = await loadImage(qrUrl);
     }
 
-    // 6. Draw Products based on Layout Style
+    // 6. Draw Products with Smart 3-Line Text Wrapping
     if (layoutStyle === "hero" && activeItems.length > 0) {
-      // Single Hero Showcase
+      // Hero Spotlight (1 Item)
       const heroItem = activeItems[0];
       const cardWidth = width - 160;
-      const cardHeight = isStory ? 780 : 460;
+      const cardHeight = isStory ? 820 : 490;
       const cardX = 80;
       const cardY = currentTitleY + 30;
 
-      // Draw Hero Card
       ctx.fillStyle = cardBg;
       ctx.strokeStyle = cardBorder;
       ctx.lineWidth = 2;
       roundRect(ctx, cardX, cardY, cardWidth, cardHeight, 36, true, true);
 
-      // Hero Image Frame
-      const imgSize = isStory ? 440 : 260;
+      // Hero Image
+      const imgSize = isStory ? 440 : 250;
       const imgX = (width - imgSize) / 2;
-      const imgY = cardY + 40;
+      const imgY = cardY + 35;
 
       const heroImg = loadedImages[heroItem.id];
       if (heroImg) {
@@ -239,38 +285,42 @@ export default function WishlistStoryCardModal({
       } else {
         ctx.fillStyle = isDarkBg ? "rgba(255, 255, 255, 0.08)" : "#f4f4f5";
         roundRect(ctx, imgX, imgY, imgSize, imgSize, 24, true, false);
-        ctx.font = "32px sans-serif";
+        ctx.font = "36px sans-serif";
         ctx.fillStyle = subTextColor;
         ctx.textAlign = "center";
-        ctx.fillText("🎁", width / 2, imgY + (imgSize / 2) + 10);
+        ctx.fillText("🎁", width / 2, imgY + (imgSize / 2) + 12);
       }
 
-      // Hero Item Name
-      const textStartY = imgY + imgSize + 55;
-      ctx.font = "bold 44px -apple-system, BlinkMacSystemFont, sans-serif";
+      // Hero Name - Wrap up to 3 lines max
+      ctx.font = "bold 40px -apple-system, BlinkMacSystemFont, sans-serif";
       ctx.fillStyle = textColor;
       ctx.textAlign = "center";
-      const name = heroItem.name.length > 40 ? heroItem.name.substring(0, 38) + "..." : heroItem.name;
-      ctx.fillText(name, width / 2, textStartY);
+      
+      const wrappedHeroLines = wrapText(ctx, heroItem.name, cardWidth - 80, 3);
+      let textY = imgY + imgSize + 50;
+      wrappedHeroLines.forEach((tLine) => {
+        ctx.fillText(tLine, width / 2, textY);
+        textY += 46;
+      });
 
-      // Hero Item Price
+      // Hero Price
       const priceText = heroItem.price 
         ? `${getCurrencySymbol(heroItem.currency)}${parseFloat(heroItem.price).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
         : "Price on site";
-      ctx.font = "bold 48px -apple-system, BlinkMacSystemFont, sans-serif";
+      ctx.font = "bold 46px -apple-system, BlinkMacSystemFont, sans-serif";
       ctx.fillStyle = accentColor;
-      ctx.fillText(priceText, width / 2, textStartY + 65);
+      ctx.fillText(priceText, width / 2, textY + 20);
 
       if (heroItem.store) {
-        ctx.font = "500 28px -apple-system, BlinkMacSystemFont, sans-serif";
+        ctx.font = "500 26px -apple-system, BlinkMacSystemFont, sans-serif";
         ctx.fillStyle = subTextColor;
-        ctx.fillText(`Available at ${heroItem.store}`, width / 2, textStartY + 115);
+        ctx.fillText(`• ${heroItem.store}`, width / 2, textY + 65);
       }
 
     } else if (layoutStyle === "duo" && activeItems.length >= 2) {
-      // Duo Split Cards
+      // Duo Split (2 Items)
       const duoItems = activeItems.slice(0, 2);
-      const cardHeight = isStory ? 380 : 300;
+      const cardHeight = isStory ? 390 : 310;
       const cardWidth = width - 160;
       const cardX = 80;
 
@@ -282,7 +332,7 @@ export default function WishlistStoryCardModal({
         ctx.lineWidth = 2;
         roundRect(ctx, cardX, cardY, cardWidth, cardHeight, 32, true, true);
 
-        // Product image on the left
+        // Image Frame
         const photoSize = cardHeight - 60;
         const photoX = cardX + 30;
         const photoY = cardY + 30;
@@ -290,48 +340,52 @@ export default function WishlistStoryCardModal({
         const pImg = loadedImages[item.id];
         if (pImg) {
           ctx.save();
-          roundRect(ctx, photoX, photoY, photoSize, photoSize, 20, false, false);
+          roundRect(ctx, photoX, photoY, photoSize, photoSize, 22, false, false);
           ctx.clip();
           ctx.drawImage(pImg, photoX, photoY, photoSize, photoSize);
           ctx.restore();
         } else {
           ctx.fillStyle = isDarkBg ? "rgba(255, 255, 255, 0.08)" : "#f4f4f5";
-          roundRect(ctx, photoX, photoY, photoSize, photoSize, 20, true, false);
+          roundRect(ctx, photoX, photoY, photoSize, photoSize, 22, true, false);
           ctx.font = "36px sans-serif";
           ctx.fillStyle = subTextColor;
           ctx.textAlign = "center";
           ctx.fillText("🎁", photoX + (photoSize / 2), photoY + (photoSize / 2) + 12);
         }
 
-        // Product text on right
-        const textX = photoX + photoSize + 35;
+        // Text Content
+        const textX = photoX + photoSize + 30;
+        const maxTextWidth = cardWidth - (photoSize + 90);
         ctx.textAlign = "left";
 
-        // Priority / Store pill
-        ctx.font = "bold 24px -apple-system, BlinkMacSystemFont, sans-serif";
+        // Store Pill
+        ctx.font = "bold 22px -apple-system, BlinkMacSystemFont, sans-serif";
         ctx.fillStyle = accentColor;
-        ctx.fillText(item.store ? item.store.toUpperCase() : "GIFT REGISTRY", textX, photoY + 45);
+        ctx.fillText(item.store ? item.store.toUpperCase() : "WISHLIST GIFT", textX, photoY + 35);
 
-        // Title
-        ctx.font = "bold 38px -apple-system, BlinkMacSystemFont, sans-serif";
+        // Smart 3-Line Wrap for Title
+        ctx.font = "bold 32px -apple-system, BlinkMacSystemFont, sans-serif";
         ctx.fillStyle = textColor;
-        const maxLen = isStory ? 28 : 22;
-        const iName = item.name.length > maxLen ? item.name.substring(0, maxLen - 2) + "..." : item.name;
-        ctx.fillText(iName, textX, photoY + 105);
+        const duoLines = wrapText(ctx, item.name, maxTextWidth, 3);
+        let nameY = photoY + 75;
+        duoLines.forEach((dLine) => {
+          ctx.fillText(dLine, textX, nameY);
+          nameY += 38;
+        });
 
         // Price
         const priceText = item.price 
           ? `${getCurrencySymbol(item.currency)}${parseFloat(item.price).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
           : "Price on site";
-        ctx.font = "bold 40px -apple-system, BlinkMacSystemFont, sans-serif";
+        ctx.font = "bold 36px -apple-system, BlinkMacSystemFont, sans-serif";
         ctx.fillStyle = accentColor;
-        ctx.fillText(priceText, textX, photoY + 175);
+        ctx.fillText(priceText, textX, photoY + photoSize - 10);
       });
 
     } else {
-      // Standard Stacked Showcase (up to 3 items)
+      // Showcase Stack (up to 3 items)
       const displayItems = activeItems.slice(0, isStory ? 3 : 2);
-      const cardHeight = isStory ? 195 : 155;
+      const cardHeight = isStory ? 205 : 165;
       const cardWidth = width - 160;
       const cardX = 80;
       const startY = currentTitleY + 25;
@@ -344,7 +398,7 @@ export default function WishlistStoryCardModal({
         ctx.lineWidth = 2;
         roundRect(ctx, cardX, cardY, cardWidth, cardHeight, 28, true, true);
 
-        // Product image thumbnail
+        // Thumbnail photo
         const thumbSize = cardHeight - 40;
         const thumbX = cardX + 20;
         const thumbY = cardY + 20;
@@ -365,26 +419,31 @@ export default function WishlistStoryCardModal({
           ctx.fillText("🎁", thumbX + (thumbSize / 2), thumbY + (thumbSize / 2) + 10);
         }
 
-        // Product Details
-        const textX = thumbX + thumbSize + 30;
+        // Details with 3-line wrap
+        const textX = thumbX + thumbSize + 25;
+        const maxTextWidth = cardWidth - (thumbSize + 70);
         ctx.textAlign = "left";
 
-        ctx.font = "bold 34px -apple-system, BlinkMacSystemFont, sans-serif";
+        ctx.font = "bold 30px -apple-system, BlinkMacSystemFont, sans-serif";
         ctx.fillStyle = textColor;
-        const iName = item.name.length > 30 ? item.name.substring(0, 28) + "..." : item.name;
-        ctx.fillText(iName, textX, cardY + 65);
+        const stackLines = wrapText(ctx, item.name, maxTextWidth, 3);
+        let sLineY = cardY + 50;
+        stackLines.forEach((sLine) => {
+          ctx.fillText(sLine, textX, sLineY);
+          sLineY += 35;
+        });
 
         const priceText = item.price 
           ? `${getCurrencySymbol(item.currency)}${parseFloat(item.price).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
           : "Price on site";
-        ctx.font = "bold 36px -apple-system, BlinkMacSystemFont, sans-serif";
+        ctx.font = "bold 34px -apple-system, BlinkMacSystemFont, sans-serif";
         ctx.fillStyle = accentColor;
-        ctx.fillText(priceText, textX, cardY + 130);
+        ctx.fillText(priceText, textX, cardY + cardHeight - 22);
 
         if (item.store) {
           ctx.font = "500 24px -apple-system, BlinkMacSystemFont, sans-serif";
           ctx.fillStyle = subTextColor;
-          ctx.fillText(`• ${item.store}`, textX + ctx.measureText(priceText).width + 18, cardY + 130);
+          ctx.fillText(`• ${item.store}`, textX + ctx.measureText(priceText).width + 16, cardY + cardHeight - 22);
         }
       });
     }
@@ -431,9 +490,11 @@ export default function WishlistStoryCardModal({
     shareUrl, 
     aspectRatio, 
     layoutStyle, 
-    selectedPresetId, 
-    bgType, 
-    customSolidColor, 
+    bgMode,
+    selectedGradientId, 
+    customSolidColor,
+    customGradStart,
+    customGradEnd,
     tagline, 
     showQr, 
     selectedItemIds, 
@@ -495,7 +556,7 @@ export default function WishlistStoryCardModal({
           Customize & Export Story Image
         </h2>
         <p className="text-xs text-stone-500 mb-6 font-light">
-          Choose card structures, select specific product photos, customize solid colors, and download a high-res PNG.
+          Choose card structures, select specific product photos, customize gradients & solid colors, and download a high-res PNG.
         </p>
 
         {/* Hidden Canvas used for high-res generation */}
@@ -618,14 +679,14 @@ export default function WishlistStoryCardModal({
               </div>
             </div>
 
-            {/* 2. Product Picker (Select Which Items to Feature) */}
+            {/* 2. Product Picker */}
             <div>
               <label className="block text-[11px] font-bold text-stone-700 uppercase tracking-wider mb-2 flex items-center justify-between">
                 <span className="flex items-center space-x-1.5">
                   <ShoppingBag className="w-3.5 h-3.5 text-emerald-700" />
                   <span>2. Select Products to Feature ({selectedItemIds.length} chosen)</span>
                 </span>
-                <span className="text-[10px] text-stone-400 font-normal">Tap item to toggle</span>
+                <span className="text-[10px] text-stone-400 font-normal">Auto-wraps up to 3 lines</span>
               </label>
 
               {items.length === 0 ? (
@@ -672,65 +733,148 @@ export default function WishlistStoryCardModal({
               )}
             </div>
 
-            {/* 3. Aesthetic Color Palette & Custom Solid Color */}
+            {/* 3. Color & Gradient Controls */}
             <div>
               <label className="block text-[11px] font-bold text-stone-700 uppercase tracking-wider mb-2 flex items-center space-x-1.5">
                 <Palette className="w-3.5 h-3.5 text-emerald-700" />
-                <span>3. Color Theme & Solid Color Picker</span>
+                <span>3. Color Mode (Gradients & Solid Colors)</span>
               </label>
 
-              {/* Color Preset Swatches */}
-              <div className="grid grid-cols-4 gap-2 mb-3">
-                {COLOR_PRESETS.map((p) => {
-                  const isActive = bgType === "preset" && selectedPresetId === p.id;
-                  return (
-                    <button
-                      key={p.id}
-                      type="button"
-                      onClick={() => {
-                        setBgType("preset");
-                        setSelectedPresetId(p.id);
-                      }}
-                      className={`p-2 rounded-xl border text-[11px] font-medium flex items-center space-x-2 transition-all ${
-                        isActive 
-                          ? "border-emerald-600 ring-2 ring-emerald-600/30 bg-emerald-50/50" 
-                          : "border-stone-200 hover:border-stone-300 bg-white"
-                      }`}
-                    >
-                      <span className="w-4 h-4 rounded-full shrink-0 shadow-xs border border-black/10" style={{ backgroundColor: p.bg }}></span>
-                      <span className="text-stone-800 font-semibold truncate text-[10px]">{p.label}</span>
-                    </button>
-                  );
-                })}
-              </div>
-
-              {/* Custom Solid Color Picker */}
-              <div className="flex items-center space-x-3 bg-stone-50 p-2.5 rounded-2xl border border-stone-200">
-                <input
-                  type="color"
-                  value={customSolidColor}
-                  onChange={(e) => {
-                    setBgType("solid");
-                    setCustomSolidColor(e.target.value);
-                  }}
-                  className="w-9 h-9 rounded-xl border-0 cursor-pointer bg-transparent p-0"
-                />
-                <div className="flex-1">
-                  <p className="text-[11px] font-bold text-stone-700">Custom Solid Background Color</p>
-                  <p className="text-[10px] text-stone-400 font-mono">{customSolidColor.toUpperCase()}</p>
-                </div>
+              {/* Mode Switcher */}
+              <div className="grid grid-cols-3 gap-2 mb-3">
                 <button
                   type="button"
-                  onClick={() => setBgType("solid")}
-                  className={`px-3 py-1.5 rounded-xl text-xs font-semibold border transition-all ${
-                    bgType === "solid" 
-                      ? "bg-stone-900 text-white border-stone-900" 
-                      : "bg-white text-stone-600 border-stone-300"
+                  onClick={() => setBgMode("gradient_preset")}
+                  className={`py-1.5 px-2 rounded-xl border text-[11px] font-semibold transition-all ${
+                    bgMode === "gradient_preset"
+                      ? "bg-stone-900 text-white border-stone-900 shadow-xs"
+                      : "bg-white text-stone-600 border-stone-200 hover:border-stone-400"
                   }`}
                 >
-                  Use Custom
+                  Gradient Presets
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setBgMode("gradient_custom")}
+                  className={`py-1.5 px-2 rounded-xl border text-[11px] font-semibold transition-all ${
+                    bgMode === "gradient_custom"
+                      ? "bg-stone-900 text-white border-stone-900 shadow-xs"
+                      : "bg-white text-stone-600 border-stone-200 hover:border-stone-400"
+                  }`}
+                >
+                  Custom Gradient
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setBgMode("solid_custom")}
+                  className={`py-1.5 px-2 rounded-xl border text-[11px] font-semibold transition-all ${
+                    bgMode === "solid_custom"
+                      ? "bg-stone-900 text-white border-stone-900 shadow-xs"
+                      : "bg-white text-stone-600 border-stone-200 hover:border-stone-400"
+                  }`}
+                >
+                  Solid Color
                 </button>
               </div>
+
+              {/* Option A: Gradient Presets */}
+              {bgMode === "gradient_preset" && (
+                <div className="grid grid-cols-4 gap-2">
+                  {GRADIENT_PRESETS.map((p) => {
+                    const isActive = selectedGradientId === p.id;
+                    return (
+                      <button
+                        key={p.id}
+                        type="button"
+                        onClick={() => setSelectedGradientId(p.id)}
+                        className={`p-2 rounded-xl border text-[11px] font-medium flex items-center space-x-2 transition-all ${
+                          isActive 
+                            ? "border-emerald-600 ring-2 ring-emerald-600/30 bg-emerald-50/50" 
+                            : "border-stone-200 hover:border-stone-300 bg-white"
+                        }`}
+                      >
+                        <span 
+                          className="w-4 h-4 rounded-full shrink-0 shadow-xs border border-black/10" 
+                          style={{ background: `linear-gradient(135deg, ${p.start}, ${p.end})` }}
+                        />
+                        <span className="text-stone-800 font-semibold truncate text-[10px]">{p.label}</span>
+                      </button>
+                    );
+                  })}
+                </div>
+              )}
+
+              {/* Option B: Custom Dual Gradient */}
+              {bgMode === "gradient_custom" && (
+                <div className="bg-stone-50 p-3 rounded-2xl border border-stone-200 space-y-3">
+                  <div className="grid grid-cols-2 gap-3">
+                    <div className="flex items-center space-x-2 bg-white p-2 rounded-xl border border-stone-200">
+                      <input
+                        type="color"
+                        value={customGradStart}
+                        onChange={(e) => setCustomGradStart(e.target.value)}
+                        className="w-8 h-8 rounded-lg cursor-pointer bg-transparent border-0 p-0"
+                      />
+                      <div>
+                        <p className="text-[10px] font-bold text-stone-600">Start Color</p>
+                        <p className="text-[10px] font-mono text-stone-400">{customGradStart.toUpperCase()}</p>
+                      </div>
+                    </div>
+
+                    <div className="flex items-center space-x-2 bg-white p-2 rounded-xl border border-stone-200">
+                      <input
+                        type="color"
+                        value={customGradEnd}
+                        onChange={(e) => setCustomGradEnd(e.target.value)}
+                        className="w-8 h-8 rounded-lg cursor-pointer bg-transparent border-0 p-0"
+                      />
+                      <div>
+                        <p className="text-[10px] font-bold text-stone-600">End Color</p>
+                        <p className="text-[10px] font-mono text-stone-400">{customGradEnd.toUpperCase()}</p>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div 
+                    className="h-7 w-full rounded-xl shadow-xs border border-stone-200 flex items-center justify-center text-[10px] font-bold text-white tracking-wider"
+                    style={{ background: `linear-gradient(90deg, ${customGradStart}, ${customGradEnd})` }}
+                  >
+                    LIVE GRADIENT PREVIEW
+                  </div>
+                </div>
+              )}
+
+              {/* Option C: Solid Custom Color */}
+              {bgMode === "solid_custom" && (
+                <div className="space-y-3">
+                  <div className="flex flex-wrap gap-1.5">
+                    {SOLID_PRESETS.map((s) => (
+                      <button
+                        key={s.color}
+                        type="button"
+                        onClick={() => setCustomSolidColor(s.color)}
+                        className="px-2.5 py-1 rounded-lg text-[10px] font-semibold border border-stone-200 hover:border-stone-400 bg-white flex items-center space-x-1.5"
+                      >
+                        <span className="w-2.5 h-2.5 rounded-full border border-black/10" style={{ backgroundColor: s.color }}></span>
+                        <span>{s.label}</span>
+                      </button>
+                    ))}
+                  </div>
+
+                  <div className="flex items-center space-x-3 bg-stone-50 p-2.5 rounded-2xl border border-stone-200">
+                    <input
+                      type="color"
+                      value={customSolidColor}
+                      onChange={(e) => setCustomSolidColor(e.target.value)}
+                      className="w-9 h-9 rounded-xl border-0 cursor-pointer bg-transparent p-0"
+                    />
+                    <div className="flex-1">
+                      <p className="text-[11px] font-bold text-stone-700">Custom Solid Background</p>
+                      <p className="text-[10px] text-stone-400 font-mono">{customSolidColor.toUpperCase()}</p>
+                    </div>
+                  </div>
+                </div>
+              )}
             </div>
 
             {/* 4. Occasion Tagline Presets */}
@@ -786,7 +930,53 @@ export default function WishlistStoryCardModal({
   );
 }
 
-// Helpers
+// Canvas Helpers
+
+function wrapText(
+  ctx: CanvasRenderingContext2D,
+  text: string,
+  maxWidth: number,
+  maxLines: number = 3
+): string[] {
+  const words = text.split(" ");
+  const lines: string[] = [];
+  let currentLine = "";
+
+  for (let i = 0; i < words.length; i++) {
+    const word = words[i];
+    const testLine = currentLine ? `${currentLine} ${word}` : word;
+    const metrics = ctx.measureText(testLine);
+
+    if (metrics.width > maxWidth) {
+      if (lines.length + 1 === maxLines) {
+        // This is the last allowed line, add ellipsis if more words remain
+        let trimmed = currentLine;
+        while (ctx.measureText(trimmed + "...").width > maxWidth && trimmed.length > 0) {
+          const lastSpace = trimmed.lastIndexOf(" ");
+          if (lastSpace === -1) {
+            trimmed = trimmed.substring(0, trimmed.length - 1);
+          } else {
+            trimmed = trimmed.substring(0, lastSpace);
+          }
+        }
+        lines.push(trimmed ? `${trimmed}...` : `${currentLine}...`);
+        return lines;
+      } else {
+        lines.push(currentLine);
+        currentLine = word;
+      }
+    } else {
+      currentLine = testLine;
+    }
+  }
+
+  if (currentLine && lines.length < maxLines) {
+    lines.push(currentLine);
+  }
+
+  return lines;
+}
+
 function loadImage(src: string): Promise<HTMLImageElement | null> {
   return new Promise((resolve) => {
     if (!src) return resolve(null);

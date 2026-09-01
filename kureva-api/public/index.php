@@ -58,6 +58,7 @@ $routes = [
     // Product preview / metadata parsing and uploads
     'POST:/api/products/preview' => ['Kureva\Controllers\ProductController', 'preview'],
     'POST:/api/upload' => ['Kureva\Controllers\ProductController', 'uploadImage'],
+    'GET:/api/proxy-image' => ['Kureva\Controllers\ProductController', 'proxyImage'],
 
     // Gift Reservations
     'POST:/api/items/([0-9]+)/reserve' => ['Kureva\Controllers\ReservationController', 'reserve'],

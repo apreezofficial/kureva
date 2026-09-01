@@ -795,14 +795,32 @@ function wrapText(ctx: CanvasRenderingContext2D, text: string, maxWidth: number,
   return lines;
 }
 
+function getProxyImageUrl(url: string) {
+  if (!url) return "";
+  if (url.startsWith("data:")) return url;
+  const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
+  return `${apiUrl}/api/proxy-image?url=${encodeURIComponent(url)}`;
+}
+
 function loadImage(src: string): Promise<HTMLImageElement | null> {
   return new Promise((resolve) => {
     if (!src) return resolve(null);
     const img = new Image();
     img.crossOrigin = "anonymous";
     img.onload = () => resolve(img);
-    img.onerror = () => resolve(null);
-    img.src = src;
+    img.onerror = () => {
+      if (!src.includes("/api/proxy-image")) {
+        const proxySrc = getProxyImageUrl(src);
+        const proxyImg = new Image();
+        proxyImg.crossOrigin = "anonymous";
+        proxyImg.onload = () => resolve(proxyImg);
+        proxyImg.onerror = () => resolve(null);
+        proxyImg.src = proxySrc;
+      } else {
+        resolve(null);
+      }
+    };
+    img.src = getProxyImageUrl(src);
   });
 }
 

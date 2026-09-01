@@ -1,12 +1,13 @@
 "use client";
 
-import { useEffect, useState, use, useRef } from "react";
+import { useEffect, useState, use } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { useAuth } from "@/lib/auth";
 import { apiRequest } from "@/lib/api";
 import Navbar from "@/components/navigation/Navbar";
 import MobileNav from "@/components/navigation/MobileNav";
+import WishlistStoryCardModal from "@/components/wishlist/WishlistStoryCardModal";
 import { 
   ArrowLeft, 
   Share2, 
@@ -16,7 +17,9 @@ import {
   Download, 
   ExternalLink,
   Sparkles,
-  ImageIcon
+  ImageIcon,
+  Smartphone,
+  Palette
 } from "lucide-react";
 
 export default function ShareWishlistPage({ 
@@ -33,6 +36,7 @@ export default function ShareWishlistPage({
   const [loading, setLoading] = useState(true);
   const [copied, setCopied] = useState(false);
   const [showQrModal, setShowQrModal] = useState(false);
+  const [isStoryModalOpen, setIsStoryModalOpen] = useState(false);
   const [toastMessage, setToastMessage] = useState("");
 
   const shareUrl = typeof window !== "undefined" ? `${window.location.origin}/w/${uuid}` : "";
@@ -125,8 +129,7 @@ export default function ShareWishlistPage({
       bgColor: "bg-[#fbeaf0]",
       textColor: "text-[#e4405f]",
       action: () => {
-        handleCopyLink();
-        showToast("Link copied! Paste into your Instagram bio or Story.");
+        setIsStoryModalOpen(true);
       },
       icon: (
         <svg className="w-6 h-6 fill-[#e4405f]" viewBox="0 0 24 24">
@@ -167,8 +170,7 @@ export default function ShareWishlistPage({
       bgColor: "bg-[#fce8ee]",
       textColor: "text-[#000000]",
       action: () => {
-        handleCopyLink();
-        showToast("Link copied! Paste into your TikTok bio or video caption.");
+        setIsStoryModalOpen(true);
       },
       icon: (
         <svg className="w-6 h-6 fill-[#000000]" viewBox="0 0 24 24">
@@ -260,16 +262,16 @@ export default function ShareWishlistPage({
             </Link>
           </div>
 
-          <div className="bg-white border border-border rounded-2xl p-6 sm:p-8 shadow-sm">
+          <div className="bg-white border border-border rounded-3xl p-6 sm:p-8 shadow-sm">
             {/* Header Icon */}
             <div className="flex justify-center mb-3">
-              <div className="w-12 h-12 rounded-full bg-emerald-50 text-emerald-600 flex items-center justify-center">
+              <div className="w-12 h-12 rounded-full bg-emerald-50 text-emerald-600 flex items-center justify-center shadow-xs">
                 <Share2 className="w-6 h-6" />
               </div>
             </div>
 
             {/* Title */}
-            <div className="text-center mb-8">
+            <div className="text-center mb-7">
               <h1 className="text-2xl font-bold text-gray-900 tracking-tight mb-1">
                 Share your wishlist
               </h1>
@@ -297,10 +299,40 @@ export default function ShareWishlistPage({
               ))}
             </div>
 
-            {/* Copy Link Input Bar */}
+            {/* Creative Story Card Exporter Button */}
+            <div className="mb-4">
+              <button
+                type="button"
+                onClick={() => setIsStoryModalOpen(true)}
+                className="w-full py-3.5 px-4 bg-gradient-to-r from-[#064e3b] to-[#047857] hover:from-[#043d2e] hover:to-[#035f45] text-white rounded-2xl text-xs sm:text-sm font-semibold flex items-center justify-between transition-all duration-200 shadow-sm"
+              >
+                <div className="flex items-center space-x-2">
+                  <Smartphone className="w-4 h-4 text-emerald-300" />
+                  <span>Download Story Graphic (.PNG)</span>
+                </div>
+                <Sparkles className="w-4 h-4 text-amber-300 shrink-0" />
+              </button>
+            </div>
+
+            {/* Download QR Code Section */}
             <div className="mb-6">
+              <button
+                type="button"
+                onClick={() => setShowQrModal(true)}
+                className="w-full py-3.5 px-4 bg-stone-900 hover:bg-black text-white rounded-2xl text-xs sm:text-sm font-semibold flex items-center justify-between transition-all duration-200 shadow-sm"
+              >
+                <div className="flex items-center space-x-2">
+                  <QrCode className="w-4 h-4 text-stone-300" />
+                  <span>Get QR code linked to your list</span>
+                </div>
+                <ImageIcon className="w-4 h-4 shrink-0 opacity-90" />
+              </button>
+            </div>
+
+            {/* Copy Link Input Bar */}
+            <div>
               <label className="block text-[11px] font-semibold text-secondary uppercase tracking-wider mb-2">
-                Wishlist Link
+                Wishlist URL
               </label>
               <div className="flex items-center space-x-2 bg-soft p-1.5 rounded-xl border border-border/70">
                 <input
@@ -323,22 +355,6 @@ export default function ShareWishlistPage({
                 </button>
               </div>
             </div>
-
-            {/* Download QR Code Section */}
-            <div>
-              <label className="block text-[11px] font-semibold text-secondary uppercase tracking-wider mb-2">
-                Download QR Code
-              </label>
-              
-              <button
-                type="button"
-                onClick={() => setShowQrModal(true)}
-                className="w-full py-3.5 px-4 bg-[#2e7d32] hover:bg-[#256629] text-white rounded-xl text-xs sm:text-sm font-semibold flex items-center justify-between transition-all duration-200 shadow-sm"
-              >
-                <span>Get a QR code that is linked to your list</span>
-                <ImageIcon className="w-4 h-4 shrink-0 opacity-90" />
-              </button>
-            </div>
           </div>
 
           {/* Toast Notification */}
@@ -352,7 +368,7 @@ export default function ShareWishlistPage({
           {/* QR Code Modal Overlay */}
           {showQrModal && (
             <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-primary/30 backdrop-blur-sm animate-fade-in">
-              <div className="bg-white rounded-2xl border border-border max-w-sm w-full p-6 text-center shadow-2xl relative">
+              <div className="bg-white rounded-3xl border border-border max-w-sm w-full p-6 text-center shadow-2xl relative">
                 <button
                   type="button"
                   onClick={() => setShowQrModal(false)}
@@ -383,7 +399,7 @@ export default function ShareWishlistPage({
                     download={`wishlist-${wishlist?.name || "qr"}.png`}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="w-full py-3 bg-[#2e7d32] hover:bg-[#256629] text-white rounded-xl text-xs font-semibold flex items-center justify-center space-x-2 transition-colors shadow-sm"
+                    className="w-full py-3 bg-[#1b7a43] hover:bg-[#145d33] text-white rounded-xl text-xs font-semibold flex items-center justify-center space-x-2 transition-colors shadow-sm"
                   >
                     <Download className="w-4 h-4" />
                     <span>Download QR Image (.PNG)</span>
@@ -399,6 +415,16 @@ export default function ShareWishlistPage({
                 </div>
               </div>
             </div>
+          )}
+
+          {/* Story Card Modal */}
+          {wishlist && (
+            <WishlistStoryCardModal
+              wishlist={wishlist}
+              shareUrl={shareUrl}
+              isOpen={isStoryModalOpen}
+              onClose={() => setIsStoryModalOpen(false)}
+            />
           )}
         </main>
       </div>

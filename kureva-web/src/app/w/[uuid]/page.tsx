@@ -3,6 +3,7 @@
 import { useEffect, useState, use } from "react";
 import Link from "next/link";
 import { apiRequest } from "@/lib/api";
+import WishlistStoryCardModal from "@/components/wishlist/WishlistStoryCardModal";
 import { 
   ExternalLink, 
   Gift, 
@@ -17,7 +18,11 @@ import {
   Store,
   User,
   ShieldCheck,
-  Loader2
+  Loader2,
+  PackageCheck,
+  Bookmark,
+  ChevronRight,
+  Info
 } from "lucide-react";
 
 export default function PublicWishlistPage({ params }: { params: Promise<{ uuid: string }> }) {
@@ -28,6 +33,7 @@ export default function PublicWishlistPage({ params }: { params: Promise<{ uuid:
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [copied, setCopied] = useState(false);
+  const [isStoryModalOpen, setIsStoryModalOpen] = useState(false);
 
   // Reservation Modal states
   const [selectedItem, setSelectedItem] = useState<any>(null);
@@ -36,6 +42,8 @@ export default function PublicWishlistPage({ params }: { params: Promise<{ uuid:
   const [guestEmail, setGuestEmail] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [successMsg, setSuccessMsg] = useState("");
+
+  const shareUrl = typeof window !== "undefined" ? window.location.href : "";
 
   const fetchWishlist = async () => {
     try {
@@ -85,11 +93,11 @@ export default function PublicWishlistPage({ params }: { params: Promise<{ uuid:
       });
 
       if (res.success) {
-        setSuccessMsg(res.message || "Thank you! The gift status has been updated.");
+        setSuccessMsg(res.message || "Thank you! The gift registry has been updated.");
         setTimeout(() => {
           setSelectedItem(null);
           fetchWishlist();
-        }, 2000);
+        }, 1800);
       }
     } catch (err: any) {
       setError(err.message || "Operation failed.");
@@ -148,13 +156,16 @@ export default function PublicWishlistPage({ params }: { params: Promise<{ uuid:
   }
 
   const items = wishlist.items || [];
-  const reservedCount = items.filter((it: any) => !!it.reservation_status).length;
+  const purchasedCount = items.filter((it: any) => it.reservation_status === "purchased").length;
+  const reservedCount = items.filter((it: any) => it.reservation_status === "reserved").length;
+  const claimedCount = purchasedCount + reservedCount;
+  const progressPercent = items.length > 0 ? Math.round((claimedCount / items.length) * 100) : 0;
 
   return (
-    <div className="min-h-screen bg-[#fafaf9] pb-24 flex flex-col justify-between">
+    <div className="min-h-screen bg-[#fcfbf9] pb-24 flex flex-col justify-between selection:bg-emerald-100">
       <div>
         {/* Top Minimalist Brand Header */}
-        <header className="border-b border-border/60 bg-white/80 backdrop-blur-md sticky top-0 z-40">
+        <header className="border-b border-stone-200/80 bg-white/90 backdrop-blur-md sticky top-0 z-40">
           <div className="mx-auto max-w-5xl px-6 h-16 flex items-center justify-between">
             <Link 
               href="/" 
@@ -163,101 +174,140 @@ export default function PublicWishlistPage({ params }: { params: Promise<{ uuid:
               kureva
             </Link>
 
-            <div className="flex items-center space-x-3">
+            <div className="flex items-center space-x-2.5">
+              <button
+                onClick={() => setIsStoryModalOpen(true)}
+                className="flex items-center space-x-1.5 px-3.5 py-1.5 bg-[#1b7a43] hover:bg-[#145d33] text-white rounded-xl text-xs font-semibold shadow-xs transition-all active:scale-98"
+              >
+                <Share2 className="w-3.5 h-3.5" />
+                <span>Share & Story Card</span>
+              </button>
+              
               <button
                 onClick={handleCopyLink}
-                className="flex items-center space-x-1.5 px-3.5 py-1.5 border border-border rounded-lg text-xs font-semibold text-secondary hover:text-primary hover:bg-soft transition-all bg-white shadow-xs"
+                className="hidden sm:flex items-center space-x-1.5 px-3 py-1.5 border border-stone-200 rounded-xl text-xs font-medium text-stone-600 hover:text-stone-900 bg-white hover:bg-stone-50 transition-all shadow-xs"
               >
-                {copied ? <Check className="w-3.5 h-3.5 text-emerald-600" /> : <Share2 className="w-3.5 h-3.5 text-emerald-600" />}
-                <span>{copied ? "Link Copied" : "Share List"}</span>
+                {copied ? <Check className="w-3.5 h-3.5 text-emerald-600" /> : <Bookmark className="w-3.5 h-3.5" />}
+                <span>{copied ? "Link Copied" : "Copy Link"}</span>
               </button>
-              <Link
-                href="/register"
-                className="hidden sm:inline-flex items-center space-x-1.5 px-4 py-1.5 bg-accent text-white rounded-lg text-xs font-semibold hover:bg-accent-dark transition-all shadow-sm"
-              >
-                <Sparkles className="w-3.5 h-3.5" />
-                <span>Create Your List</span>
-              </Link>
             </div>
           </div>
         </header>
 
         {/* Cover Banner */}
         {wishlist.cover_image && (
-          <div className="w-full h-48 sm:h-64 md:h-80 bg-gray-100 overflow-hidden relative border-b border-border">
+          <div className="w-full h-48 sm:h-64 md:h-80 bg-stone-100 overflow-hidden relative border-b border-stone-200">
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img 
               src={wishlist.cover_image} 
               alt={wishlist.name} 
               className="w-full h-full object-cover" 
             />
-            <div className="absolute inset-0 bg-gradient-to-t from-black/40 via-transparent to-transparent"></div>
+            <div className="absolute inset-0 bg-gradient-to-t from-black/50 via-black/10 to-transparent"></div>
           </div>
         )}
 
         {/* Main Wishlist Registry Body */}
-        <main className="mx-auto max-w-5xl px-6 py-10">
+        <main className="mx-auto max-w-5xl px-6 py-8">
           
-          {/* Wishlist Header & Bio Card */}
-          <div className="bg-white border border-border/80 rounded-2xl p-6 sm:p-8 shadow-sm mb-10">
+          {/* Wishlist Header & Registry Banner Card */}
+          <div className="bg-white border border-stone-200 rounded-3xl p-6 sm:p-10 shadow-xs mb-8">
             <div className="flex flex-col md:flex-row md:items-start justify-between gap-6">
-              <div className="space-y-3 flex-1">
-                <div className="flex flex-wrap items-center gap-2">
-                  <span className="text-[11px] tracking-wider font-semibold text-emerald-700 uppercase bg-emerald-50 px-2.5 py-0.5 rounded-full border border-emerald-100 flex items-center space-x-1">
-                    <Sparkles className="w-3 h-3" />
-                    <span>Wishlist Registry</span>
+              <div className="space-y-3.5 flex-1">
+                
+                {/* Official Registry Badge & Curator Pill */}
+                <div className="flex flex-wrap items-center gap-2.5">
+                  <span className="text-[11px] tracking-wider font-semibold text-emerald-800 uppercase bg-emerald-50 px-3 py-1 rounded-full border border-emerald-200/80 flex items-center space-x-1.5">
+                    <Sparkles className="w-3.5 h-3.5 text-emerald-600" />
+                    <span>Official Gift Registry</span>
                   </span>
-                  <span className="text-xs text-secondary font-light">
-                    {items.length} {items.length === 1 ? "gift" : "gifts"} • {reservedCount} reserved
-                  </span>
+                  
+                  <Link 
+                    href={`/${wishlist.username}`}
+                    className="flex items-center space-x-1.5 px-3 py-1 rounded-full bg-stone-100 hover:bg-stone-200/80 text-stone-700 text-xs font-medium transition-colors"
+                  >
+                    <User className="w-3 h-3 text-stone-500" />
+                    <span>Curated by <strong className="text-stone-900">@{wishlist.username}</strong></span>
+                  </Link>
                 </div>
 
-                <h1 className="text-3xl sm:text-4xl font-normal text-primary font-editorial tracking-tight leading-tight">
+                <h1 className="text-3xl sm:text-5xl font-normal text-stone-900 font-editorial tracking-tight leading-tight">
                   {wishlist.name}
                 </h1>
 
-                <div className="flex items-center space-x-2 pt-1">
-                  <div className="w-6 h-6 rounded-full bg-accent/10 text-accent flex items-center justify-center text-xs font-semibold">
-                    {wishlist.owner_name ? wishlist.owner_name[0].toUpperCase() : (wishlist.username ? wishlist.username[0].toUpperCase() : "U")}
-                  </div>
-                  <p className="text-xs text-secondary font-light">
-                    Curated by{" "}
-                    <Link 
-                      href={`/${wishlist.username}`} 
-                      className="text-primary font-semibold hover:text-accent hover:underline transition-colors"
-                    >
-                      @{wishlist.username}
-                    </Link>
-                  </p>
-                </div>
-
+                {/* Curator's Personal Note */}
                 {wishlist.description && (
-                  <div className="mt-4 p-4 rounded-xl bg-soft/60 border border-border/50 text-xs sm:text-sm text-secondary leading-relaxed font-light break-words">
-                    &ldquo;{wishlist.description}&rdquo;
+                  <div className="p-4 rounded-2xl bg-amber-50/50 border border-amber-200/60 text-xs sm:text-sm text-stone-700 leading-relaxed font-light break-words flex items-start space-x-2.5">
+                    <span className="text-base leading-none select-none">💬</span>
+                    <div>
+                      <p className="font-semibold text-stone-800 text-[11px] uppercase tracking-wide mb-0.5">
+                        Note from @{wishlist.username}
+                      </p>
+                      <p className="italic">&ldquo;{wishlist.description}&rdquo;</p>
+                    </div>
                   </div>
                 )}
+
+                {/* Progress Tracker */}
+                <div className="pt-2">
+                  <div className="flex items-center justify-between text-xs font-medium text-stone-600 mb-1.5">
+                    <span>Registry Gifting Progress</span>
+                    <span className="font-semibold text-stone-900">
+                      {claimedCount} of {items.length} claimed ({progressPercent}%)
+                    </span>
+                  </div>
+                  <div className="w-full h-2.5 bg-stone-100 rounded-full overflow-hidden border border-stone-200/60">
+                    <div 
+                      className="h-full bg-emerald-600 rounded-full transition-all duration-500"
+                      style={{ width: `${progressPercent}%` }}
+                    />
+                  </div>
+                </div>
               </div>
             </div>
           </div>
 
-          {/* Items Header */}
-          <div className="flex items-center justify-between mb-6">
-            <h2 className="text-xl font-normal text-primary font-editorial tracking-tight">
-              Gift Registry Items ({items.length})
+          {/* "How Gifting Works" Explainer Banner */}
+          <div className="bg-stone-50 border border-stone-200/80 rounded-2xl p-5 mb-10">
+            <h3 className="text-xs font-bold uppercase tracking-wider text-stone-700 mb-3 flex items-center space-x-1.5">
+              <Info className="w-3.5 h-3.5 text-emerald-700" />
+              <span>How Gifting on Kureva Works</span>
+            </h3>
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 text-xs text-stone-600">
+              <div className="flex items-start space-x-2.5">
+                <span className="w-5 h-5 rounded-full bg-stone-200 text-stone-800 flex items-center justify-center font-bold text-[10px] shrink-0">1</span>
+                <span><strong>Select an item:</strong> Pick something they&apos;ll cherish from the curated collection below.</span>
+              </div>
+              <div className="flex items-start space-x-2.5">
+                <span className="w-5 h-5 rounded-full bg-stone-200 text-stone-800 flex items-center justify-center font-bold text-[10px] shrink-0">2</span>
+                <span><strong>Buy at store:</strong> Click &ldquo;Buy on Jumia/Amazon&rdquo; to order directly to their doorstep.</span>
+              </div>
+              <div className="flex items-start space-x-2.5">
+                <span className="w-5 h-5 rounded-full bg-stone-200 text-stone-800 flex items-center justify-center font-bold text-[10px] shrink-0">3</span>
+                <span><strong>Mark as bought:</strong> Lock the item so other guests won&apos;t buy duplicates!</span>
+              </div>
+            </div>
+          </div>
+
+          {/* Items Section Header */}
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-6 pb-2 border-b border-stone-200">
+            <h2 className="text-2xl font-normal text-stone-900 font-editorial tracking-tight flex items-center space-x-2">
+              <Gift className="w-5 h-5 text-emerald-700" />
+              <span>Items on the Registry ({items.length})</span>
             </h2>
-            <span className="text-xs text-secondary font-light">
-              Select an item below to reserve or mark as bought
+            <span className="text-xs text-stone-500 font-light">
+              Click &ldquo;I bought this&rdquo; or &ldquo;Reserve&rdquo; to claim an item
             </span>
           </div>
 
           {/* Item Cards Grid */}
           {items.length === 0 ? (
-            <div className="text-center py-20 bg-white rounded-2xl border border-dashed border-border p-8 shadow-sm">
-              <Gift className="w-10 h-10 text-secondary/30 mx-auto mb-3" />
-              <h3 className="text-base font-normal text-primary font-editorial mb-1">
-                No wishes added yet
+            <div className="text-center py-20 bg-white rounded-3xl border border-dashed border-stone-200 p-8 shadow-xs">
+              <Gift className="w-12 h-12 text-stone-300 mx-auto mb-3" />
+              <h3 className="text-lg font-normal text-stone-900 font-editorial mb-1">
+                No wishes listed yet
               </h3>
-              <p className="text-xs text-secondary font-light max-w-sm mx-auto">
+              <p className="text-xs text-stone-500 font-light max-w-sm mx-auto">
                 The creator hasn&apos;t added any items to this collection yet. Check back soon!
               </p>
             </div>
@@ -270,11 +320,11 @@ export default function PublicWishlistPage({ params }: { params: Promise<{ uuid:
                 return (
                   <div
                     key={item.id}
-                    className="border border-border/80 rounded-2xl overflow-hidden flex flex-col justify-between bg-white group hover:border-accent hover:shadow-md transition-all duration-300"
+                    className="border border-stone-200/90 rounded-3xl overflow-hidden flex flex-col justify-between bg-white group hover:border-emerald-600/60 hover:shadow-lg transition-all duration-300"
                   >
                     <div>
                       {/* Card Media Container */}
-                      <div className="h-52 bg-white relative p-4 flex items-center justify-center border-b border-border/40 overflow-hidden">
+                      <div className="h-56 bg-stone-50 relative p-4 flex items-center justify-center border-b border-stone-100 overflow-hidden">
                         {item.image_url ? (
                           /* eslint-disable-next-line @next/next/no-img-element */
                           <img
@@ -283,9 +333,9 @@ export default function PublicWishlistPage({ params }: { params: Promise<{ uuid:
                             className="w-full h-full object-contain group-hover:scale-105 transition-transform duration-300"
                           />
                         ) : (
-                          <div className="flex flex-col items-center justify-center text-secondary/40 space-y-1">
-                            <ShoppingBag className="w-8 h-8 stroke-1" />
-                            <span className="text-[11px] font-light">No photo provided</span>
+                          <div className="flex flex-col items-center justify-center text-stone-400 space-y-1.5">
+                            <ShoppingBag className="w-9 h-9 stroke-1 text-stone-300" />
+                            <span className="text-[11px] font-light">Photo coming soon</span>
                           </div>
                         )}
 
@@ -293,40 +343,37 @@ export default function PublicWishlistPage({ params }: { params: Promise<{ uuid:
                         <div className="absolute top-3 left-3 z-10">
                           <span className={`text-[10px] tracking-wide font-semibold px-2.5 py-0.5 rounded-full shadow-xs border ${
                             item.priority === "must_have" 
-                              ? "bg-rose-50 text-rose-600 border-rose-100"
+                              ? "bg-rose-50 text-rose-700 border-rose-200"
                               : item.priority === "really_want"
-                                ? "bg-amber-50 text-amber-600 border-amber-100"
+                                ? "bg-amber-50 text-amber-700 border-amber-200"
                                 : "bg-stone-50 text-stone-600 border-stone-200"
                           }`}>
-                            {item.priority === "must_have" ? "🔥 Must Have" : item.priority === "really_want" ? "✨ Really Want" : "Nice To Have"}
+                            {item.priority === "must_have" ? "🔥 Most Wanted" : item.priority === "really_want" ? "✨ Really Loved" : "Nice To Have"}
                           </span>
                         </div>
 
-                        {/* Store Link Button (Top-Right) */}
-                        {item.product_url && (
-                          <a
-                            href={item.product_url}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="absolute top-3 right-3 z-10 p-1.5 bg-white/90 hover:bg-white text-secondary hover:text-primary rounded-lg border border-border/70 shadow-xs transition-all"
-                            title="View product at store"
-                          >
-                            <ExternalLink className="w-3.5 h-3.5" />
-                          </a>
+                        {/* Store Tag Pill (Top-Right) */}
+                        {item.store && (
+                          <div className="absolute top-3 right-3 z-10">
+                            <span className="inline-flex items-center space-x-1 text-[10px] text-stone-700 font-semibold uppercase tracking-wider bg-white/95 px-2.5 py-1 rounded-full border border-stone-200/80 shadow-xs">
+                              <Store className="w-2.5 h-2.5 text-stone-500" />
+                              <span>{item.store}</span>
+                            </span>
+                          </div>
                         )}
 
-                        {/* Reservation Frosted Overlay */}
+                        {/* Reservation Frosted Glass Overlay */}
                         {isReserved && (
-                          <div className="absolute inset-0 bg-white/80 backdrop-blur-[2px] z-20 flex flex-col items-center justify-center p-4 text-center">
-                            <span className={`text-xs font-semibold px-3 py-1.5 rounded-full border shadow-sm mb-1 ${
+                          <div className="absolute inset-0 bg-white/85 backdrop-blur-[2px] z-20 flex flex-col items-center justify-center p-4 text-center">
+                            <span className={`text-xs font-semibold px-3 py-1.5 rounded-full border shadow-xs mb-1.5 ${
                               isPurchased 
                                 ? "bg-emerald-600 text-white border-emerald-600"
                                 : "bg-blue-600 text-white border-blue-600"
                             }`}>
                               {isPurchased ? "✓ Purchased by a guest" : "Reserved by a guest"}
                             </span>
-                            <p className="text-[10px] text-secondary font-light">
-                              {isPurchased ? "This item is already bought." : "Someone has reserved this gift."}
+                            <p className="text-[11px] text-stone-600 font-light">
+                              {isPurchased ? "This gift is already taken!" : "Someone is planning to buy this."}
                             </p>
                           </div>
                         )}
@@ -334,16 +381,14 @@ export default function PublicWishlistPage({ params }: { params: Promise<{ uuid:
 
                       {/* Card Content */}
                       <div className="p-5">
-                        <div className="flex items-start justify-between gap-2 mb-2">
-                          <h3 className="font-medium text-primary text-sm leading-snug line-clamp-2 break-words">
-                            {item.name}
-                          </h3>
-                        </div>
+                        <h3 className="font-semibold text-stone-900 text-base leading-snug line-clamp-2 break-words mb-2">
+                          {item.name}
+                        </h3>
 
                         {/* Formatted Price */}
-                        <div className="mt-1 flex items-baseline space-x-1.5">
+                        <div className="flex items-baseline space-x-1.5">
                           {item.price !== null && item.price !== "" ? (
-                            <span className="text-base font-bold text-accent">
+                            <span className="text-xl font-bold text-stone-900 tracking-tight">
                               {getCurrencySymbol(item.currency)}
                               {parseFloat(item.price).toLocaleString(undefined, { 
                                 minimumFractionDigits: 2, 
@@ -351,53 +396,62 @@ export default function PublicWishlistPage({ params }: { params: Promise<{ uuid:
                               })}
                             </span>
                           ) : (
-                            <span className="text-xs text-secondary/70 font-light italic">
-                              Price not listed
+                            <span className="text-xs text-stone-500 font-light italic">
+                              Price available at store
                             </span>
                           )}
-                          <span className="text-[11px] text-secondary font-light">
-                            • Qty: {item.quantity || 1}
+                          <span className="text-[11px] text-stone-500 font-light">
+                            • Quantity: {item.quantity || 1}
                           </span>
                         </div>
 
-                        {/* Store Tag */}
-                        {item.store && (
-                          <div className="mt-2.5">
-                            <span className="inline-flex items-center space-x-1 text-[10px] text-secondary font-medium uppercase tracking-wider bg-soft px-2 py-0.5 rounded border border-border/50">
-                              <Store className="w-2.5 h-2.5" />
-                              <span>{item.store}</span>
-                            </span>
-                          </div>
-                        )}
-
-                        {/* Notes / Sizing */}
+                        {/* Notes / Sizing / Guidelines */}
                         {item.notes && (
-                          <div className="mt-3 p-2.5 rounded-lg bg-soft/50 border border-border/40 text-[11px] text-secondary leading-relaxed font-light break-words">
+                          <div className="mt-3.5 p-3 rounded-xl bg-stone-50 border border-stone-200/60 text-xs text-stone-600 leading-relaxed font-light break-words">
+                            <span className="font-semibold text-stone-700 block text-[10px] uppercase tracking-wider mb-0.5">
+                              Sizing / Note:
+                            </span>
                             &ldquo;{item.notes}&rdquo;
                           </div>
                         )}
                       </div>
                     </div>
 
-                    {/* Card Actions */}
-                    <div className="p-4 pt-0">
+                    {/* Card Actions Footer */}
+                    <div className="p-5 pt-0 space-y-2">
+                      
+                      {/* Direct Store Buy Link */}
+                      {item.product_url && !isReserved && (
+                        <a
+                          href={item.product_url}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="w-full py-2.5 px-3 border border-stone-200 hover:border-emerald-600 text-stone-700 hover:text-emerald-700 bg-stone-50/50 hover:bg-emerald-50/30 rounded-xl text-xs font-semibold flex items-center justify-center space-x-1.5 transition-all"
+                        >
+                          <span>Buy at {item.store || "Store"}</span>
+                          <ExternalLink className="w-3.5 h-3.5" />
+                        </a>
+                      )}
+
+                      {/* Claiming Actions */}
                       {isReserved ? (
-                        <div className="w-full text-center py-2.5 text-xs text-secondary font-medium bg-soft rounded-xl border border-border/40 select-none">
-                          {isPurchased ? "Purchased ✓" : "Reserved"}
+                        <div className="w-full text-center py-2.5 text-xs text-stone-500 font-medium bg-stone-100 rounded-xl border border-stone-200 select-none">
+                          {isPurchased ? "Already gifted ✓" : "Currently reserved"}
                         </div>
                       ) : (
                         <div className="flex items-center gap-2">
                           <button
                             onClick={() => handleOpenModal(item, "reserve")}
-                            className="flex-1 py-2.5 border border-border hover:border-primary/40 text-primary bg-white hover:bg-soft rounded-xl text-xs font-semibold transition-all shadow-xs"
+                            className="flex-1 py-2.5 border border-stone-300 hover:border-stone-400 text-stone-800 bg-white hover:bg-stone-50 rounded-xl text-xs font-semibold transition-all shadow-xs"
                           >
                             Reserve
                           </button>
                           <button
                             onClick={() => handleOpenModal(item, "purchase")}
-                            className="flex-1 py-2.5 bg-accent hover:bg-accent-dark text-white rounded-xl text-xs font-semibold transition-all shadow-sm"
+                            className="flex-1 py-2.5 bg-[#1b7a43] hover:bg-[#145d33] text-white rounded-xl text-xs font-semibold transition-all shadow-xs flex items-center justify-center space-x-1"
                           >
-                            I bought this
+                            <PackageCheck className="w-3.5 h-3.5" />
+                            <span>I bought this</span>
                           </button>
                         </div>
                       )}
@@ -408,96 +462,96 @@ export default function PublicWishlistPage({ params }: { params: Promise<{ uuid:
             </div>
           )}
 
-          {/* Reservation Guest Modal */}
+          {/* Reservation Guest Dialog Modal */}
           {selectedItem && (
-            <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-primary/30 backdrop-blur-sm animate-fade-in">
-              <div className="bg-white rounded-2xl border border-border max-w-sm w-full p-6 relative shadow-2xl">
+            <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm animate-fade-in">
+              <div className="bg-white rounded-3xl border border-stone-200 max-w-sm w-full p-6 sm:p-7 relative shadow-2xl">
                 {!successMsg && (
                   <button
                     onClick={() => setSelectedItem(null)}
-                    className="absolute top-4 right-4 text-secondary hover:text-primary p-1 rounded-full hover:bg-soft"
+                    className="absolute top-5 right-5 text-stone-400 hover:text-stone-800 p-1.5 rounded-full hover:bg-stone-100 transition-colors"
                   >
                     <X className="w-4 h-4" />
                   </button>
                 )}
 
                 <div className="mb-4">
-                  <span className="text-[10px] font-semibold uppercase tracking-wider text-accent bg-accent/10 px-2 py-0.5 rounded-full inline-block mb-1.5">
-                    {actionType === "purchase" ? "Mark as Purchased" : "Reserve Gift"}
+                  <span className="text-[10px] font-bold uppercase tracking-wider text-emerald-700 bg-emerald-50 px-2.5 py-0.5 rounded-full inline-block mb-2 border border-emerald-100">
+                    {actionType === "purchase" ? "Mark as Purchased" : "Reserve Gift for 48 Hours"}
                   </span>
-                  <h3 className="text-xl font-normal text-primary font-editorial">
+                  <h3 className="text-2xl font-normal text-stone-900 font-editorial">
                     {actionType === "purchase" ? "Claim this Gift" : "Reserve this Wish"}
                   </h3>
                 </div>
                 
-                <p className="text-xs text-secondary mb-5 leading-relaxed font-light break-words">
-                  You are selecting <strong className="text-primary font-medium">{selectedItem.name}</strong>. This hides it from other guests to prevent duplicates.
+                <p className="text-xs text-stone-600 mb-5 leading-relaxed font-light break-words">
+                  You are selecting <strong className="text-stone-900 font-semibold">{selectedItem.name}</strong>. This updates the registry so other guests don&apos;t buy duplicates.
                 </p>
 
                 {successMsg ? (
                   <div className="py-6 text-center space-y-3">
-                    <div className="w-12 h-12 rounded-full bg-emerald-50 text-emerald-600 flex items-center justify-center mx-auto">
-                      <Check className="w-6 h-6" />
+                    <div className="w-14 h-14 rounded-full bg-emerald-50 text-emerald-600 flex items-center justify-center mx-auto shadow-xs">
+                      <Check className="w-7 h-7" />
                     </div>
-                    <p className="text-sm font-semibold text-primary">{successMsg}</p>
-                    <p className="text-xs text-secondary font-light">
+                    <p className="text-base font-semibold text-stone-900">{successMsg}</p>
+                    <p className="text-xs text-stone-500 font-light">
                       Updating registry view...
                     </p>
                   </div>
                 ) : (
                   <form onSubmit={handleAction} className="space-y-4">
                     {error && (
-                      <div className="bg-red-50 text-red-600 text-xs p-2.5 rounded-lg border border-red-100 text-center font-medium">
+                      <div className="bg-red-50 text-red-600 text-xs p-2.5 rounded-xl border border-red-100 text-center font-medium">
                         {error}
                       </div>
                     )}
                     
                     <div>
-                      <label className="block text-[11px] font-semibold text-secondary uppercase tracking-wider mb-1">
+                      <label className="block text-[11px] font-bold text-stone-700 uppercase tracking-wider mb-1.5">
                         Your Name *
                       </label>
                       <input
                         type="text"
                         required
                         placeholder="e.g. Kenji"
-                        className="w-full px-3.5 py-2 border border-border rounded-lg text-sm focus:outline-none focus:border-accent"
+                        className="w-full px-3.5 py-2.5 border border-stone-200 rounded-xl text-sm focus:outline-none focus:border-emerald-600 bg-stone-50/50 focus:bg-white transition-all"
                         value={guestName}
                         onChange={(e) => setGuestName(e.target.value)}
                       />
                     </div>
 
                     <div>
-                      <label className="block text-[11px] font-semibold text-secondary uppercase tracking-wider mb-1">
+                      <label className="block text-[11px] font-bold text-stone-700 uppercase tracking-wider mb-1.5">
                         Your Email (Optional)
                       </label>
                       <input
                         type="email"
                         placeholder="e.g. kenji@example.com"
-                        className="w-full px-3.5 py-2 border border-border rounded-lg text-sm focus:outline-none focus:border-accent"
+                        className="w-full px-3.5 py-2.5 border border-stone-200 rounded-xl text-sm focus:outline-none focus:border-emerald-600 bg-stone-50/50 focus:bg-white transition-all"
                         value={guestEmail}
                         onChange={(e) => setGuestEmail(e.target.value)}
                       />
                     </div>
 
-                    <div className="bg-soft/70 p-3 rounded-xl text-[11px] text-secondary font-light leading-relaxed border border-border/50 flex items-start space-x-2">
-                      <ShieldCheck className="w-4 h-4 text-accent shrink-0 mt-0.5" />
+                    <div className="bg-stone-50 p-3.5 rounded-2xl text-[11px] text-stone-600 font-light leading-relaxed border border-stone-200/70 flex items-start space-x-2.5">
+                      <ShieldCheck className="w-4 h-4 text-emerald-600 shrink-0 mt-0.5" />
                       <span>
-                        <strong>Surprise Protection:</strong> The wishlist owner won&apos;t see who reserved this until they open their gifts!
+                        <strong>Surprise Protection:</strong> The creator won&apos;t be notified of who bought what until they unwrap their gifts!
                       </span>
                     </div>
 
-                    <div className="flex gap-2 pt-2">
+                    <div className="flex gap-2.5 pt-2">
                       <button
                         type="button"
                         onClick={() => setSelectedItem(null)}
-                        className="w-1/3 py-2.5 border border-border rounded-xl text-xs font-semibold text-secondary hover:text-primary hover:bg-soft"
+                        className="w-1/3 py-3 border border-stone-200 rounded-xl text-xs font-semibold text-stone-600 hover:text-stone-900 hover:bg-stone-50"
                       >
                         Cancel
                       </button>
                       <button
                         type="submit"
                         disabled={submitting}
-                        className="w-2/3 py-2.5 bg-accent hover:bg-accent-dark text-white font-semibold rounded-xl text-xs shadow-sm flex items-center justify-center space-x-2 disabled:opacity-50 transition-all"
+                        className="w-2/3 py-3 bg-[#1b7a43] hover:bg-[#145d33] text-white font-semibold rounded-xl text-xs shadow-xs flex items-center justify-center space-x-2 disabled:opacity-50 transition-all"
                       >
                         {submitting ? (
                           <>
@@ -514,24 +568,34 @@ export default function PublicWishlistPage({ params }: { params: Promise<{ uuid:
               </div>
             </div>
           )}
+
+          {/* Story Card & Social Graphic Modal */}
+          {wishlist && (
+            <WishlistStoryCardModal
+              wishlist={wishlist}
+              shareUrl={shareUrl}
+              isOpen={isStoryModalOpen}
+              onClose={() => setIsStoryModalOpen(false)}
+            />
+          )}
         </main>
       </div>
 
-      {/* Footer */}
-      <footer className="border-t border-border/60 bg-white py-10 mt-12 text-center text-xs text-secondary">
+      {/* Luxury Footer */}
+      <footer className="border-t border-stone-200 bg-white py-12 text-center text-xs text-stone-500">
         <div className="mx-auto max-w-5xl px-6 flex flex-col sm:flex-row items-center justify-between gap-4">
           <div className="flex items-center space-x-2">
-            <Link href="/" className="font-editorial text-xl font-normal text-primary tracking-tight">
+            <Link href="/" className="font-editorial text-2xl font-normal text-stone-900 tracking-tight">
               kureva
             </Link>
-            <span className="text-secondary/40">•</span>
-            <span className="font-light">Modern Wishlist & Registry Platform</span>
+            <span className="text-stone-300">•</span>
+            <span className="font-light">Modern Wishlist & Gift Registry</span>
           </div>
 
-          <div className="flex items-center space-x-4 font-medium text-xs">
-            <Link href="/" className="hover:text-primary transition-colors">Home</Link>
-            <Link href="/login" className="hover:text-primary transition-colors">Sign In</Link>
-            <Link href="/register" className="text-accent hover:underline">Create a Wishlist</Link>
+          <div className="flex items-center space-x-5 font-medium text-xs">
+            <Link href="/" className="hover:text-stone-900 transition-colors">Home</Link>
+            <Link href="/login" className="hover:text-stone-900 transition-colors">Sign In</Link>
+            <Link href="/register" className="text-emerald-700 hover:underline font-semibold">Create a Wishlist</Link>
           </div>
         </div>
       </footer>

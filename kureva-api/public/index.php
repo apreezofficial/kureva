@@ -60,9 +60,11 @@ $routes = [
     'POST:/api/upload' => ['Kureva\Controllers\ProductController', 'uploadImage'],
     'GET:/api/proxy-image' => ['Kureva\Controllers\ProductController', 'proxyImage'],
 
-    // Gift Reservations
+    // Gift Reservations & Verification
     'POST:/api/items/([0-9]+)/reserve' => ['Kureva\Controllers\ReservationController', 'reserve'],
     'POST:/api/items/([0-9]+)/purchase' => ['Kureva\Controllers\ReservationController', 'purchase'],
+    'POST:/api/items/([0-9]+)/verify-claim' => ['Kureva\Controllers\ReservationController', 'verifyClaim'],
+    'POST:/api/items/([0-9]+)/release-claim' => ['Kureva\Controllers\ReservationController', 'releaseClaim'],
 
     // Occasion Routes
     'GET:/api/occasions'      => ['Kureva\Controllers\OccasionController', 'list'],

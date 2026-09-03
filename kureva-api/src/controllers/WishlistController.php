@@ -116,9 +116,16 @@ class WishlistController {
                 return;
             }
 
-            // Fetch wishlist items
+            // Fetch wishlist items with reservation & verification details
             $stmtItems = $db->prepare("
-                SELECT wi.*, gr.name as reserved_by_name, gr.status as reservation_status 
+                SELECT wi.*, 
+                       gr.id as reservation_id,
+                       gr.name as reserved_by_name, 
+                       gr.email as reserved_by_email, 
+                       gr.status as reservation_status,
+                       gr.is_verified,
+                       gr.note as reservation_note,
+                       gr.created_at as reserved_at
                 FROM wishlist_items wi 
                 LEFT JOIN gift_reservations gr ON wi.id = gr.wishlist_item_id
                 WHERE wi.wishlist_id = :wishlist_id 
@@ -126,6 +133,16 @@ class WishlistController {
             ");
             $stmtItems->execute(['wishlist_id' => $wishlist['id']]);
             $items = $stmtItems->fetchAll();
+
+            // If not owner, sanitize sensitive gifter notes/email for visitor view
+            if (!$isOwner) {
+                foreach ($items as &$item) {
+                    if (!empty($item['reservation_status'])) {
+                        unset($item['reserved_by_email']);
+                        unset($item['reservation_note']);
+                    }
+                }
+            }
 
             $wishlist['items'] = $items;
             $wishlist['is_owner'] = $isOwner;

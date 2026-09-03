@@ -22,7 +22,9 @@ import {
   PackageCheck,
   Bookmark,
   ChevronRight,
-  Info
+  Info,
+  Clock,
+  CheckCircle2
 } from "lucide-react";
 
 export default function PublicWishlistPage({ params }: { params: Promise<{ uuid: string }> }) {
@@ -37,9 +39,10 @@ export default function PublicWishlistPage({ params }: { params: Promise<{ uuid:
 
   // Reservation Modal states
   const [selectedItem, setSelectedItem] = useState<any>(null);
-  const [actionType, setActionType] = useState<"reserve" | "purchase">("reserve");
+  const [actionType, setActionType] = useState<"reserve" | "purchase">("purchase");
   const [guestName, setGuestName] = useState("");
   const [guestEmail, setGuestEmail] = useState("");
+  const [guestNote, setGuestNote] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [successMsg, setSuccessMsg] = useState("");
 
@@ -75,6 +78,7 @@ export default function PublicWishlistPage({ params }: { params: Promise<{ uuid:
     setActionType(type);
     setGuestName("");
     setGuestEmail("");
+    setGuestNote("");
     setSuccessMsg("");
     setError("");
   };
@@ -89,11 +93,15 @@ export default function PublicWishlistPage({ params }: { params: Promise<{ uuid:
       const endpoint = `/api/items/${selectedItem.id}/${actionType}`;
       const res = await apiRequest(endpoint, {
         method: "POST",
-        data: { name: guestName, email: guestEmail },
+        data: { 
+          name: guestName, 
+          email: guestEmail,
+          note: guestNote 
+        },
       });
 
       if (res.success) {
-        setSuccessMsg(res.message || "Thank you! The gift registry has been updated.");
+        setSuccessMsg(res.message || "Thank you! The gift claim is recorded.");
         setTimeout(() => {
           setSelectedItem(null);
           fetchWishlist();
@@ -156,9 +164,8 @@ export default function PublicWishlistPage({ params }: { params: Promise<{ uuid:
   }
 
   const items = wishlist.items || [];
-  const purchasedCount = items.filter((it: any) => it.reservation_status === "purchased").length;
-  const reservedCount = items.filter((it: any) => it.reservation_status === "reserved").length;
-  const claimedCount = purchasedCount + reservedCount;
+  const claimedCount = items.filter((it: any) => !!it.reservation_status).length;
+  const verifiedCount = items.filter((it: any) => !!it.is_verified).length;
   const progressPercent = items.length > 0 ? Math.round((claimedCount / items.length) * 100) : 0;
 
   return (
@@ -253,7 +260,7 @@ export default function PublicWishlistPage({ params }: { params: Promise<{ uuid:
                   <div className="flex items-center justify-between text-xs font-medium text-stone-600 mb-1.5">
                     <span>Registry Gifting Progress</span>
                     <span className="font-semibold text-stone-900">
-                      {claimedCount} of {items.length} claimed ({progressPercent}%)
+                      {claimedCount} of {items.length} claimed ({progressPercent}%) • {verifiedCount} verified received
                     </span>
                   </div>
                   <div className="w-full h-2.5 bg-stone-100 rounded-full overflow-hidden border border-stone-200/60">
@@ -284,7 +291,7 @@ export default function PublicWishlistPage({ params }: { params: Promise<{ uuid:
               </div>
               <div className="flex items-start space-x-2.5">
                 <span className="w-5 h-5 rounded-full bg-stone-200 text-stone-800 flex items-center justify-center font-bold text-[10px] shrink-0">3</span>
-                <span><strong>Mark as bought:</strong> Lock the item so other guests won&apos;t buy duplicates!</span>
+                <span><strong>Claim Gift:</strong> Click &ldquo;I bought this&rdquo; to record your gift so the owner can verify receipt!</span>
               </div>
             </div>
           </div>
@@ -314,8 +321,9 @@ export default function PublicWishlistPage({ params }: { params: Promise<{ uuid:
           ) : (
             <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6">
               {items.map((item: any) => {
-                const isReserved = !!item.reservation_status;
-                const isPurchased = item.reservation_status === "purchased";
+                const isClaimed = !!item.reservation_status;
+                const isPurchased = item.reservation_status === "purchased" || item.reservation_status === "verified";
+                const isVerified = !!item.is_verified;
 
                 return (
                   <div
@@ -362,18 +370,39 @@ export default function PublicWishlistPage({ params }: { params: Promise<{ uuid:
                           </div>
                         )}
 
-                        {/* Reservation Frosted Glass Overlay */}
-                        {isReserved && (
+                        {/* Reservation / Verification Frosted Glass Overlay */}
+                        {isClaimed && (
                           <div className="absolute inset-0 bg-white/85 backdrop-blur-[2px] z-20 flex flex-col items-center justify-center p-4 text-center">
-                            <span className={`text-xs font-semibold px-3 py-1.5 rounded-full border shadow-xs mb-1.5 ${
-                              isPurchased 
+                            <span className={`text-xs font-semibold px-3 py-1.5 rounded-full border shadow-xs mb-1.5 flex items-center space-x-1.5 ${
+                              isVerified
                                 ? "bg-emerald-600 text-white border-emerald-600"
-                                : "bg-blue-600 text-white border-blue-600"
+                                : isPurchased 
+                                  ? "bg-amber-600 text-white border-amber-600"
+                                  : "bg-blue-600 text-white border-blue-600"
                             }`}>
-                              {isPurchased ? "✓ Purchased by a guest" : "Reserved by a guest"}
+                              {isVerified ? (
+                                <>
+                                  <CheckCircle2 className="w-3.5 h-3.5" />
+                                  <span>✓ Gift Received & Verified</span>
+                                </>
+                              ) : isPurchased ? (
+                                <>
+                                  <Sparkles className="w-3.5 h-3.5" />
+                                  <span>Claimed • Pending Verification</span>
+                                </>
+                              ) : (
+                                <>
+                                  <Clock className="w-3.5 h-3.5" />
+                                  <span>Reserved by a guest</span>
+                                </>
+                              )}
                             </span>
-                            <p className="text-[11px] text-stone-600 font-light">
-                              {isPurchased ? "This gift is already taken!" : "Someone is planning to buy this."}
+                            <p className="text-[11px] text-stone-600 font-light max-w-xs">
+                              {isVerified 
+                                ? "The creator has confirmed receiving this gift!"
+                                : isPurchased 
+                                  ? "A guest has claimed this gift. Locked to prevent duplicates." 
+                                  : "Someone has temporarily held this item."}
                             </p>
                           </div>
                         )}
@@ -421,7 +450,7 @@ export default function PublicWishlistPage({ params }: { params: Promise<{ uuid:
                     <div className="p-5 pt-0 space-y-2">
                       
                       {/* Direct Store Buy Link */}
-                      {item.product_url && !isReserved && (
+                      {item.product_url && !isClaimed && (
                         <a
                           href={item.product_url}
                           target="_blank"
@@ -434,9 +463,13 @@ export default function PublicWishlistPage({ params }: { params: Promise<{ uuid:
                       )}
 
                       {/* Claiming Actions */}
-                      {isReserved ? (
-                        <div className="w-full text-center py-2.5 text-xs text-stone-500 font-medium bg-stone-100 rounded-xl border border-stone-200 select-none">
-                          {isPurchased ? "Already gifted ✓" : "Currently reserved"}
+                      {isClaimed ? (
+                        <div className={`w-full text-center py-2.5 text-xs font-medium rounded-xl border select-none ${
+                          isVerified
+                            ? "bg-emerald-50 text-emerald-800 border-emerald-200"
+                            : "bg-stone-100 text-stone-600 border-stone-200"
+                        }`}>
+                          {isVerified ? "Gift Received & Confirmed ✓" : "Claimed (Awaiting Verification)"}
                         </div>
                       ) : (
                         <div className="flex items-center gap-2">
@@ -477,7 +510,7 @@ export default function PublicWishlistPage({ params }: { params: Promise<{ uuid:
 
                 <div className="mb-4">
                   <span className="text-[10px] font-bold uppercase tracking-wider text-emerald-700 bg-emerald-50 px-2.5 py-0.5 rounded-full inline-block mb-2 border border-emerald-100">
-                    {actionType === "purchase" ? "Mark as Purchased" : "Reserve Gift for 48 Hours"}
+                    {actionType === "purchase" ? "Claim as Purchased" : "Reserve Gift for 48 Hours"}
                   </span>
                   <h3 className="text-2xl font-normal text-stone-900 font-editorial">
                     {actionType === "purchase" ? "Claim this Gift" : "Reserve this Wish"}
@@ -485,7 +518,7 @@ export default function PublicWishlistPage({ params }: { params: Promise<{ uuid:
                 </div>
                 
                 <p className="text-xs text-stone-600 mb-5 leading-relaxed font-light break-words">
-                  You are selecting <strong className="text-stone-900 font-semibold">{selectedItem.name}</strong>. This updates the registry so other guests don&apos;t buy duplicates.
+                  You are selecting <strong className="text-stone-900 font-semibold">{selectedItem.name}</strong>. This informs the creator so they can verify receipt and prevents duplicate gifts.
                 </p>
 
                 {successMsg ? (
@@ -495,11 +528,11 @@ export default function PublicWishlistPage({ params }: { params: Promise<{ uuid:
                     </div>
                     <p className="text-base font-semibold text-stone-900">{successMsg}</p>
                     <p className="text-xs text-stone-500 font-light">
-                      Updating registry view...
+                      The creator can now verify your claim in their registry.
                     </p>
                   </div>
                 ) : (
-                  <form onSubmit={handleAction} className="space-y-4">
+                  <form onSubmit={handleAction} className="space-y-3.5">
                     {error && (
                       <div className="bg-red-50 text-red-600 text-xs p-2.5 rounded-xl border border-red-100 text-center font-medium">
                         {error}
@@ -507,7 +540,7 @@ export default function PublicWishlistPage({ params }: { params: Promise<{ uuid:
                     )}
                     
                     <div>
-                      <label className="block text-[11px] font-bold text-stone-700 uppercase tracking-wider mb-1.5">
+                      <label className="block text-[11px] font-bold text-stone-700 uppercase tracking-wider mb-1">
                         Your Name *
                       </label>
                       <input
@@ -521,7 +554,7 @@ export default function PublicWishlistPage({ params }: { params: Promise<{ uuid:
                     </div>
 
                     <div>
-                      <label className="block text-[11px] font-bold text-stone-700 uppercase tracking-wider mb-1.5">
+                      <label className="block text-[11px] font-bold text-stone-700 uppercase tracking-wider mb-1">
                         Your Email (Optional)
                       </label>
                       <input
@@ -533,10 +566,23 @@ export default function PublicWishlistPage({ params }: { params: Promise<{ uuid:
                       />
                     </div>
 
-                    <div className="bg-stone-50 p-3.5 rounded-2xl text-[11px] text-stone-600 font-light leading-relaxed border border-stone-200/70 flex items-start space-x-2.5">
+                    <div>
+                      <label className="block text-[11px] font-bold text-stone-700 uppercase tracking-wider mb-1">
+                        Personal Note / Message (Optional)
+                      </label>
+                      <textarea
+                        rows={2}
+                        placeholder="Add a sweet message, sizing note, or order reference..."
+                        className="w-full px-3.5 py-2 border border-stone-200 rounded-xl text-xs focus:outline-none focus:border-emerald-600 bg-stone-50/50 focus:bg-white transition-all resize-none"
+                        value={guestNote}
+                        onChange={(e) => setGuestNote(e.target.value)}
+                      />
+                    </div>
+
+                    <div className="bg-stone-50 p-3 rounded-2xl text-[11px] text-stone-600 font-light leading-relaxed border border-stone-200/70 flex items-start space-x-2">
                       <ShieldCheck className="w-4 h-4 text-emerald-600 shrink-0 mt-0.5" />
                       <span>
-                        <strong>Surprise Protection:</strong> The creator won&apos;t be notified of who bought what until they unwrap their gifts!
+                        <strong>Surprise Protection:</strong> Your claim is locked to avoid duplicates. The wishlist creator verifies receipt upon arrival!
                       </span>
                     </div>
 
@@ -559,7 +605,7 @@ export default function PublicWishlistPage({ params }: { params: Promise<{ uuid:
                             <span>Processing...</span>
                           </>
                         ) : (
-                          <span>{actionType === "purchase" ? "Confirm Purchase" : "Reserve Gift"}</span>
+                          <span>{actionType === "purchase" ? "Confirm Claim" : "Reserve Gift"}</span>
                         )}
                       </button>
                     </div>

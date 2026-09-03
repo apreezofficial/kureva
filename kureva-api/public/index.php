@@ -1,5 +1,17 @@
 <?php
 
+// Return false for existing static files so PHP built-in server serves them directly
+$requestedPath = parse_url($_SERVER['REQUEST_URI'] ?? '', PHP_URL_PATH);
+$staticFilePath = __DIR__ . $requestedPath;
+if ($requestedPath !== '/' && is_file($staticFilePath) && basename($staticFilePath) !== 'index.php') {
+    return false;
+}
+
+// Composer autoloader
+if (file_exists(__DIR__ . '/../vendor/autoload.php')) {
+    require_once __DIR__ . '/../vendor/autoload.php';
+}
+
 // Class autoloader mapping Kureva\ namespace to src/ folder
 spl_autoload_register(function ($class) {
     $prefix = 'Kureva\\';
@@ -9,21 +21,36 @@ spl_autoload_register(function ($class) {
         return;
     }
     $relative_class = substr($class, $len);
-    $file = $base_dir . str_replace('\\', '/', $relative_class) . '.php';
-    if (file_exists($file)) {
-        require $file;
+    $parts = explode('\\', $relative_class);
+    $className = array_pop($parts);
+    $dirPath = implode('/', array_map('strtolower', $parts));
+    
+    // Try lowercase directory path first (e.g. src/controllers/WishlistController.php)
+    $file1 = $base_dir . ($dirPath ? $dirPath . '/' : '') . $className . '.php';
+    if (file_exists($file1)) {
+        require_once $file1;
+        return;
+    }
+
+    // Fallback to exact relative path
+    $file2 = $base_dir . str_replace('\\', '/', $relative_class) . '.php';
+    if (file_exists($file2)) {
+        require_once $file2;
+        return;
     }
 });
 
 // Configure CORS
-$origin = $_SERVER['HTTP_ORIGIN'] ?? 'http://localhost:3000';
-header("Access-Control-Allow-Origin: $origin");
+$origin = $_SERVER['HTTP_ORIGIN'] ?? '*';
+header("Access-Control-Allow-Origin: " . ($origin ?: '*'));
 header("Access-Control-Allow-Methods: GET, POST, PATCH, PUT, DELETE, OPTIONS");
-header("Access-Control-Allow-Headers: Content-Type, Authorization, X-Requested-With");
+header("Access-Control-Allow-Headers: Content-Type, Authorization, X-Requested-With, Accept, Origin");
 header("Access-Control-Allow-Credentials: true");
+header("Access-Control-Max-Age: 86400");
 header("Content-Type: application/json; charset=UTF-8");
 
 if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
+    http_response_code(200);
     exit(0);
 }
 

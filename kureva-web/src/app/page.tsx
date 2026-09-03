@@ -4,17 +4,14 @@ import Link from "next/link";
 import { useAuth } from "@/lib/auth";
 import { 
   ArrowRight, 
-  Gift, 
-  Share2, 
   Sparkles, 
-  ShieldCheck, 
-  Link2, 
-  Smartphone, 
   CheckCircle2, 
-  SlidersHorizontal,
-  BookmarkCheck,
-  ShoppingBag,
-  ExternalLink
+  Gift,
+  Share2,
+  ShieldCheck,
+  Link2,
+  QrCode,
+  Palette
 } from "lucide-react";
 
 export default function Home() {
@@ -26,7 +23,7 @@ export default function Home() {
       badge: "Curation & Setup",
       title: "Curate wishlists for every moment.",
       description:
-        "Create personalized gift collections for birthdays, weddings, baby showers, or quiet everyday wants. Customize cover photography, add personal creator notes, and set granular privacy controls with a few taps.",
+        "Create personalized gift collections for birthdays, weddings, holidays, or quiet everyday wants. Customize cover photography, add personal creator notes, and set granular privacy controls with a few taps.",
       highlights: [
         "Private, Shared, or Public visibility controls",
         "Custom high-resolution cover photography",
@@ -39,11 +36,11 @@ export default function Home() {
     {
       number: "02",
       badge: "Effortless Import",
-      title: "Paste any link. We handle the rest.",
+      title: "Paste any store link. We handle the rest.",
       description:
         "Found something you love on Jumia, Amazon, ASOS, or Zara? Just paste the product link into Kureva. Our smart parser automatically pulls the title, price, currency, store name, and product photos in seconds.",
       highlights: [
-        "1-Click store auto-fill from any website",
+        "1-Click store auto-fill from any e-commerce website",
         "Multi-currency formatting (₦, $, €, £, ¥)",
         "Priority flags: Most Wanted, Really Loved, Nice To Have"
       ],
@@ -53,48 +50,63 @@ export default function Home() {
     },
     {
       number: "03",
-      badge: "Owner Management",
-      title: "Keep full control of your gifts & claims.",
+      badge: "Story Graphic Studio",
+      title: "Design export-ready graphics for Instagram & WhatsApp.",
       description:
-        "Manage your entire collection with real-time editing, quantity tracking, and gift claim verification. Review incoming claims from friends and confirm verified items to keep your registry accurate.",
+        "Generate high-resolution 9:16 story cards and 1:1 square graphics tailored for WhatsApp status, Instagram stories, and Twitter. Complete with dynamic gradient presets, custom color pickers, and scannable QR codes.",
       highlights: [
-        "Live collection management and fast editing",
-        "Anti-troll privacy: unverified claims stay open",
-        "1-Click claim confirmation & gift tracking"
+        "Editorial Ticket-Frame canvas with high-res .PNG export",
+        "Scannable QR codes leading directly to your gift registry",
+        "Curated aesthetic gradients: Emerald Silk, Midnight Velvet, Sunset Blush"
       ],
-      image: "/images/home/feature-manage-collection.png",
-      alt: "Manage wishlist items and verify claims in owner dashboard",
+      image: "/images/home/feature-story-studio.png",
+      alt: "Customize and export high-res story graphics with QR code",
       reversed: false,
     },
     {
       number: "04",
-      badge: "Social Export Studio",
-      title: "Share across WhatsApp, Instagram & beyond.",
+      badge: "The Gifting Experience",
+      title: "Direct store checkout with 1-click reservations.",
       description:
-        "Export high-resolution 9:16 story cards and 1:1 square graphics designed for WhatsApp status, Instagram stories, and Twitter feeds. Choose custom gradients, curate featured products, and embed scannable QR codes.",
+        "Give your friends and family an effortless gifting journey. Visitors can view all registry items, jump directly to the merchant store to buy, and claim or reserve gifts so everyone stays in sync.",
       highlights: [
-        "Instant 1-tap sharing to 10+ social apps",
-        "High-res Story Graphic Studio (.PNG export)",
-        "Scannable QR code generator for direct gifting"
+        "Direct outbound 'Buy at Store' links (Jumia, Amazon, etc.)",
+        "Transparent item quantity and reservation status",
+        "Clean, clutter-free mobile experience for all guests"
       ],
-      image: "/images/home/feature-share-social.png",
-      alt: "Share wishlists and generate story graphics",
+      image: "/images/home/feature-registry-actions.png",
+      alt: "Public registry with direct store purchase and reservation buttons",
       reversed: true,
     },
     {
       number: "05",
-      badge: "The Gifting Experience",
-      title: "An unforgettable gifting journey for your loved ones.",
+      badge: "Surprise-Protected Claims",
+      title: "Claim gifts with personal notes & duplicate protection.",
       description:
-        "Give your friends and family a luxury public registry experience. Visitors can read your personal notes, track gifting progress, order directly from store links, and claim gifts to prevent duplicate purchases.",
+        "Guests can claim an item as bought in one click without needing an account. They can leave heartfelt personal messages while our surprise-protection engine locks the gift to prevent embarrassing duplicate purchases.",
       highlights: [
-        "Editorial typography, curator note & progress bar",
-        "Direct store checkout links (Buy at Store)",
-        "1-Click guest claiming with surprise note protection"
+        "No login required for guests to claim or reserve",
+        "Personal gift messages & sender notes for the creator",
+        "Surprise duplicate protection keeps lists organized"
       ],
-      image: "/images/home/feature-public-registry.png",
-      alt: "Official public gift registry page for guests",
+      image: "/images/home/feature-claim-modal.png",
+      alt: "Claim this gift modal with surprise protection and personal note",
       reversed: false,
+    },
+    {
+      number: "06",
+      badge: "Creator Control & Privacy",
+      title: "Stay in total control with verified gift receipt.",
+      description:
+        "Never worry about false claims or prank locks. Unverified claims stay open to the public until you review the gifter's details and click Confirm. Once verified, the item is officially marked received.",
+      highlights: [
+        "Owner review banner showing gifter name, email, and note",
+        "Anti-troll security: pending claims remain open to public visitors",
+        "1-Click 'Verify & Confirm' or 'Decline / Reopen' actions"
+      ],
+      image: "/images/home/feature-claim-verification.png",
+      alt: "Owner dashboard gift claims and verification review panel",
+      reversed: true,
     },
   ];
 
@@ -147,7 +159,7 @@ export default function Home() {
           </h1>
 
           <p className="text-base sm:text-lg text-stone-600 max-w-2xl mx-auto leading-relaxed font-light">
-            Kureva is the modern wishlist platform for collecting what you love, auto-importing products from any store, and sharing verified registries with friends and family.
+            Kureva is the modern wishlist platform for collecting what you love, auto-importing products from any store, designing social story graphics, and sharing verified registries with friends.
           </p>
 
           <div className="flex flex-col sm:flex-row items-center justify-center gap-3.5 pt-4">
@@ -170,7 +182,7 @@ export default function Home() {
 
       {/* Zigzag Feature Sections */}
       <section className="py-12 md:py-20 space-y-24 md:space-y-36 max-w-6xl mx-auto px-6">
-        {sections.map((sec, idx) => (
+        {sections.map((sec) => (
           <div
             key={sec.number}
             className={`flex flex-col items-center gap-10 md:gap-16 lg:gap-24 ${

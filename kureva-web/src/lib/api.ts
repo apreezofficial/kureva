@@ -39,3 +39,28 @@ export async function apiRequest(endpoint: string, options: RequestOptions = {})
 
   return result;
 }
+
+export async function uploadFile(file: File): Promise<string> {
+  const token = typeof window !== "undefined" ? localStorage.getItem("kureva_token") : null;
+  const formData = new FormData();
+  formData.append("image", file);
+
+  const headers: HeadersInit = {};
+  if (token) {
+    headers["Authorization"] = `Bearer ${token}`;
+  }
+
+  const response = await fetch(`${API_BASE_URL}/api/upload`, {
+    method: "POST",
+    headers,
+    body: formData,
+  });
+
+  const result = await response.json().catch(() => ({}));
+  if (!response.ok || !result.success) {
+    throw new Error(result?.error?.message || "Failed to upload file");
+  }
+
+  return result.data.url;
+}
+

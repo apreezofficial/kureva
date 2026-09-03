@@ -4,7 +4,7 @@ import { useEffect, useState, use, useRef } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { useAuth } from "@/lib/auth";
-import { apiRequest } from "@/lib/api";
+import { apiRequest, uploadFile } from "@/lib/api";
 import Navbar from "@/components/navigation/Navbar";
 import MobileNav from "@/components/navigation/MobileNav";
 import { ArrowLeft, Upload, X, AlertCircle, Sparkles, Trash2, Loader2 } from "lucide-react";
@@ -86,22 +86,11 @@ export default function EditWishItemPage({
     setError("");
 
     try {
-      const res = await fetch("http://127.0.0.1:8000/api/upload", {
-        method: "POST",
-        body: formData,
-        headers: {
-          "Authorization": `Bearer ${localStorage.getItem("token") || ""}`
-        }
-      });
-      const data = await res.json();
-      if (data.success && data.data?.url) {
-        setImageUrl(data.data.url);
-        setSuccess("Image uploaded successfully!");
-      } else {
-        setError(data.error?.message || "Failed to upload image.");
-      }
-    } catch (err) {
-      setError("An error occurred during file upload.");
+      const uploadedUrl = await uploadFile(file);
+      setImageUrl(uploadedUrl);
+      setSuccess("Image uploaded successfully!");
+    } catch (err: any) {
+      setError(err?.message || "An error occurred during file upload.");
     } finally {
       setImageUploading(false);
     }

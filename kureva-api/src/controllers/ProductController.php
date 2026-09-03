@@ -65,10 +65,10 @@ class ProductController {
         $destination = $uploadDir . $filename;
 
         if (move_uploaded_file($file['tmp_name'], $destination)) {
-            // Determine host dynamically
-            $protocol = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') ? 'https://' : 'http://';
-            $host = $_SERVER['HTTP_HOST'] ?? '127.0.0.1:8000';
-            $url = $protocol . $host . '/uploads/' . $filename;
+            // Determine host dynamically (supporting reverse proxies & OutRay tunnels)
+            $host = $_SERVER['HTTP_X_FORWARDED_HOST'] ?? $_SERVER['HTTP_HOST'] ?? 'happy-moonstone.outray.app';
+            $proto = $_SERVER['HTTP_X_FORWARDED_PROTO'] ?? ((!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') ? 'https' : 'https');
+            $url = $proto . '://' . $host . '/uploads/' . $filename;
 
             echo json_encode([
                 'success' => true,

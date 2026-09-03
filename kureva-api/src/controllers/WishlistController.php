@@ -134,13 +134,16 @@ class WishlistController {
             $stmtItems->execute(['wishlist_id' => $wishlist['id']]);
             $items = $stmtItems->fetchAll();
 
-            // If not owner, sanitize sensitive gifter notes/email for visitor view
+            // If not owner, only show claims that have been explicitly verified by the owner.
+            // Pending claims remain open to the public so malicious visitors cannot lock items.
             if (!$isOwner) {
                 foreach ($items as &$item) {
-                    if (!empty($item['reservation_status'])) {
-                        unset($item['reserved_by_email']);
-                        unset($item['reservation_note']);
+                    if (empty($item['is_verified'])) {
+                        $item['reservation_status'] = null;
+                        $item['reserved_by_name'] = null;
                     }
+                    unset($item['reserved_by_email']);
+                    unset($item['reservation_note']);
                 }
             }
 

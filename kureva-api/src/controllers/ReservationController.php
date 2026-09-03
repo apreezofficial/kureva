@@ -38,30 +38,44 @@ class ReservationController {
                 return;
             }
 
-            // Check if item is already reserved
-            $stmtCheck = $db->prepare("SELECT id, status FROM gift_reservations WHERE wishlist_item_id = :item_id");
+            // Check if item is already verified
+            $stmtCheck = $db->prepare("SELECT id, status, is_verified FROM gift_reservations WHERE wishlist_item_id = :item_id");
             $stmtCheck->execute(['item_id' => $itemId]);
             $existing = $stmtCheck->fetch();
 
-            if ($existing) {
+            if ($existing && !empty($existing['is_verified'])) {
                 http_response_code(409);
                 echo json_encode([
                     'success' => false,
-                    'error' => ['code' => 'ALREADY_CLAIMED', 'message' => 'This gift has already been claimed by another guest.']
+                    'error' => ['code' => 'ALREADY_CLAIMED', 'message' => 'This gift has already been confirmed and received by the creator.']
                 ]);
                 return;
             }
 
-            $stmtReserve = $db->prepare("
-                INSERT INTO gift_reservations (wishlist_item_id, name, email, note, status, is_verified, created_at) 
-                VALUES (:item_id, :name, :email, :note, 'reserved', 0, CURRENT_TIMESTAMP)
-            ");
-            $stmtReserve->execute([
-                'item_id' => $itemId,
-                'name' => $name,
-                'email' => $email,
-                'note' => $note ?: null
-            ]);
+            if ($existing) {
+                $stmtUpdate = $db->prepare("
+                    UPDATE gift_reservations 
+                    SET name = :name, email = :email, note = :note, status = 'reserved', updated_at = CURRENT_TIMESTAMP 
+                    WHERE id = :id
+                ");
+                $stmtUpdate->execute([
+                    'name' => $name,
+                    'email' => $email,
+                    'note' => $note ?: null,
+                    'id' => $existing['id']
+                ]);
+            } else {
+                $stmtReserve = $db->prepare("
+                    INSERT INTO gift_reservations (wishlist_item_id, name, email, note, status, is_verified, created_at) 
+                    VALUES (:item_id, :name, :email, :note, 'reserved', 0, CURRENT_TIMESTAMP)
+                ");
+                $stmtReserve->execute([
+                    'item_id' => $itemId,
+                    'name' => $name,
+                    'email' => $email,
+                    'note' => $note ?: null
+                ]);
+            }
 
             echo json_encode([
                 'success' => true,
@@ -113,9 +127,18 @@ class ReservationController {
             }
 
             // Check if there is an existing reservation
-            $stmtCheck = $db->prepare("SELECT id, status FROM gift_reservations WHERE wishlist_item_id = :item_id");
+            $stmtCheck = $db->prepare("SELECT id, status, is_verified FROM gift_reservations WHERE wishlist_item_id = :item_id");
             $stmtCheck->execute(['item_id' => $itemId]);
             $existing = $stmtCheck->fetch();
+
+            if ($existing && !empty($existing['is_verified'])) {
+                http_response_code(409);
+                echo json_encode([
+                    'success' => false,
+                    'error' => ['code' => 'ALREADY_CLAIMED', 'message' => 'This gift has already been received and confirmed by the creator.']
+                ]);
+                return;
+            }
 
             if ($existing) {
                 // Update to purchased

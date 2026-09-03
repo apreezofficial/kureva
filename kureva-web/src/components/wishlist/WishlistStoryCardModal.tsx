@@ -798,7 +798,7 @@ function wrapText(ctx: CanvasRenderingContext2D, text: string, maxWidth: number,
 function getProxyImageUrl(url: string) {
   if (!url) return "";
   if (url.startsWith("data:")) return url;
-  const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
+  const apiUrl = process.env.NEXT_PUBLIC_API_URL || "https://happy-moonstone.outray.app";
   return `${apiUrl}/api/proxy-image?url=${encodeURIComponent(url)}`;
 }
 

@@ -50,63 +50,48 @@ export default function Home() {
     },
     {
       number: "03",
-      badge: "Story Graphic Studio",
-      title: "Design export-ready graphics for Instagram & WhatsApp.",
+      badge: "Instant Distribution",
+      title: "Share everywhere in a single tap.",
       description:
-        "Generate high-resolution 9:16 story cards and 1:1 square graphics tailored for WhatsApp status, Instagram stories, and Twitter. Complete with dynamic gradient presets, custom color pickers, and scannable QR codes.",
+        "Effortlessly distribute your wishlist across WhatsApp, Instagram, Twitter, Snapchat, TikTok, Facebook, Telegram, SMS, and Email. Your friends get direct access to your registry with zero app installation required.",
       highlights: [
-        "Editorial Ticket-Frame canvas with high-res .PNG export",
-        "Scannable QR codes leading directly to your gift registry",
-        "Curated aesthetic gradients: Emerald Silk, Midnight Velvet, Sunset Blush"
+        "1-Tap native sharing to 10+ social platforms & messaging apps",
+        "Zero-friction web access for all your friends and family",
+        "Instant clipboard copy with customized vanity links"
       ],
-      image: "/images/home/feature-story-studio.png",
-      alt: "Customize and export high-res story graphics with QR code",
+      image: "/images/home/feature-share-social.png",
+      alt: "Share wishlist across WhatsApp, Instagram, TikTok and social channels",
       reversed: false,
     },
     {
       number: "04",
-      badge: "The Gifting Experience",
-      title: "Direct store checkout with 1-click reservations.",
+      badge: "Story Graphic Studio",
+      title: "Design aesthetic story cards with scannable QR codes.",
       description:
-        "Give your friends and family an effortless gifting journey. Visitors can view all registry items, jump directly to the merchant store to buy, and claim or reserve gifts so everyone stays in sync.",
+        "Generate high-resolution 9:16 story cards and 1:1 square graphics tailored for WhatsApp status and Instagram stories. Choose editorial gradient presets like Emerald Silk or Midnight Velvet, spotlight your top wishes, and embed instant scannable QR codes.",
       highlights: [
-        "Direct outbound 'Buy at Store' links (Jumia, Amazon, etc.)",
-        "Transparent item quantity and reservation status",
-        "Clean, clutter-free mobile experience for all guests"
+        "Editorial Ticket-Frame canvas with high-res .PNG export",
+        "Scannable QR codes leading directly to your gift registry",
+        "Aesthetic gradient palettes & spotlight product cards"
       ],
-      image: "/images/home/feature-registry-actions.png",
-      alt: "Public registry with direct store purchase and reservation buttons",
+      image: "/images/home/feature-story-studio.png",
+      alt: "Customize and export high-res story graphics with QR code",
       reversed: true,
     },
     {
       number: "05",
-      badge: "Surprise-Protected Claims",
-      title: "Claim gifts with personal notes & duplicate protection.",
-      description:
-        "Guests can claim an item as bought in one click without needing an account. They can leave heartfelt personal messages while our surprise-protection engine locks the gift to prevent embarrassing duplicate purchases.",
-      highlights: [
-        "No login required for guests to claim or reserve",
-        "Personal gift messages & sender notes for the creator",
-        "Surprise duplicate protection keeps lists organized"
-      ],
-      image: "/images/home/feature-claim-modal.png",
-      alt: "Claim this gift modal with surprise protection and personal note",
-      reversed: false,
-    },
-    {
-      number: "06",
       badge: "Creator Control & Privacy",
-      title: "Stay in total control with verified gift receipt.",
+      title: "Stay in total control with verified gift receipts.",
       description:
-        "Never worry about false claims or prank locks. Unverified claims stay open to the public until you review the gifter's details and click Confirm. Once verified, the item is officially marked received.",
+        "Never worry about false claims or prank locks. Unverified guest claims remain open to the public until you review the gifter's name, email, and personal note in your private dashboard. One click to confirm receipt or reopen the item.",
       highlights: [
-        "Owner review banner showing gifter name, email, and note",
-        "Anti-troll security: pending claims remain open to public visitors",
-        "1-Click 'Verify & Confirm' or 'Decline / Reopen' actions"
+        "Private review banner showing gifter details and surprise notes",
+        "Anti-troll security: unverified claims remain available to guests",
+        "1-Click 'Verify & Confirm' or 'Decline / Reopen' controls"
       ],
       image: "/images/home/feature-claim-verification.png",
       alt: "Owner dashboard gift claims and verification review panel",
-      reversed: true,
+      reversed: false,
     },
   ];
 
@@ -180,7 +165,7 @@ export default function Home() {
         </div>
       </section>
 
-      {/* Zigzag Feature Sections */}
+      {/* Zigzag Feature Sections (Top 5 Curated) */}
       <section className="py-12 md:py-20 space-y-24 md:space-y-36 max-w-6xl mx-auto px-6">
         {sections.map((sec) => (
           <div

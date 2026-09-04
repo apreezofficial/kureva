@@ -2,6 +2,8 @@
 
 import Link from "next/link";
 import { useAuth } from "@/lib/auth";
+import MarketingHeader from "@/components/navigation/MarketingHeader";
+import MarketingFooter from "@/components/navigation/MarketingFooter";
 import { 
   ArrowRight, 
   Sparkles, 
@@ -97,39 +99,7 @@ export default function Home() {
 
   return (
     <div className="min-h-screen bg-[#fafaf9] flex flex-col justify-between selection:bg-emerald-100 text-stone-800">
-      {/* Navigation Header */}
-      <header className="border-b border-stone-200/80 bg-white/90 backdrop-blur-md sticky top-0 z-50">
-        <div className="mx-auto max-w-6xl w-full px-6 h-16 flex justify-between items-center">
-          <div className="text-2xl font-normal tracking-tight text-stone-900 lowercase font-editorial">
-            kureva
-          </div>
-          <div className="flex items-center space-x-4 sm:space-x-6">
-            {user ? (
-              <Link
-                href="/dashboard"
-                className="text-xs sm:text-sm font-semibold text-stone-900 hover:text-emerald-700 transition-colors"
-              >
-                Go to Dashboard →
-              </Link>
-            ) : (
-              <>
-                <Link
-                  href="/login"
-                  className="text-xs sm:text-sm font-medium text-stone-600 hover:text-stone-900 transition-colors"
-                >
-                  Sign In
-                </Link>
-                <Link
-                  href="/register"
-                  className="text-xs sm:text-sm px-4 py-2 rounded-xl bg-[#1b7a43] hover:bg-[#145d33] text-white font-semibold transition-all shadow-xs"
-                >
-                  Create Wishlist
-                </Link>
-              </>
-            )}
-          </div>
-        </div>
-      </header>
+      <MarketingHeader />
 
       {/* Hero Section */}
       <section className="relative overflow-hidden pt-16 pb-20 md:pt-24 md:pb-28 text-center px-6">
@@ -262,20 +232,7 @@ export default function Home() {
       </section>
 
       {/* Footer */}
-      <footer className="border-t border-stone-200 bg-white py-12 px-6">
-        <div className="mx-auto max-w-6xl flex flex-col md:flex-row justify-between items-center text-xs text-stone-500 gap-4">
-          <div className="flex items-center space-x-2">
-            <span className="font-editorial text-stone-900 text-xl font-normal lowercase">kureva</span>
-            <span>—</span>
-            <span className="font-light">Understated wishlist curation & gift registries.</span>
-          </div>
-          <div className="flex items-center space-x-6 text-stone-600 font-medium">
-            <Link href="/" className="hover:text-stone-900">Home</Link>
-            <Link href="/login" className="hover:text-stone-900">Sign In</Link>
-            <Link href="/register" className="text-emerald-700 hover:underline">Create Wishlist</Link>
-          </div>
-        </div>
-      </footer>
+      <MarketingFooter />
     </div>
   );
 }

@@ -133,23 +133,6 @@ export default function ScrollTextReveal() {
             );
           })}
         </div>
-
-        {/* Animated Bottom Interactive Scroll Meter */}
-        <div className="pt-4 flex items-center justify-between text-xs font-mono text-stone-500">
-          <div className="flex items-center space-x-3">
-            <div className="w-32 sm:w-48 h-1 bg-stone-200/80 rounded-full overflow-hidden p-[0.5px]">
-              <div 
-                className="h-full bg-gradient-to-r from-emerald-600 to-[#1b7a43] rounded-full transition-all duration-150 ease-out"
-                style={{ width: `${Math.round(scrollProgress * 100)}%` }}
-              />
-            </div>
-            <span>{Math.round(scrollProgress * 100)}% read</span>
-          </div>
-
-          <span className="text-[11px] text-stone-400 font-sans font-medium">
-            Kureva Manifest
-          </span>
-        </div>
       </div>
 
       {/* Animated Bottom Border Line */}

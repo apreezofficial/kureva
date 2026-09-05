@@ -5,6 +5,7 @@ import Link from "next/link";
 import MarketingHeader from "@/components/navigation/MarketingHeader";
 import MarketingFooter from "@/components/navigation/MarketingFooter";
 import WishlistStoryCardModal from "@/components/wishlist/WishlistStoryCardModal";
+import ProductMotionFlow from "@/components/home/ProductMotionFlow";
 import { 
   ArrowRight, 
   Sparkles, 
@@ -358,9 +359,42 @@ export default function DemoPage() {
       )}
 
       {/* Main Registry Showcase Container */}
-      <main className="max-w-4xl mx-auto w-full px-4 sm:px-6 py-8 sm:py-12 space-y-8 flex-1">
-        {/* Wishlist Header Card */}
-        <div className="bg-white rounded-3xl border border-stone-200/90 shadow-md overflow-hidden">
+      <main className="max-w-5xl mx-auto w-full px-4 sm:px-6 py-8 sm:py-12 space-y-16 flex-1">
+        {/* Section 1: Animated Interactive Lifecycle Walkthrough */}
+        <section className="space-y-6">
+          <div className="space-y-2">
+            <div className="inline-flex items-center space-x-2 px-3 py-1 rounded-full bg-emerald-50 border border-emerald-200/80 text-emerald-800 text-xs font-semibold tracking-wide uppercase">
+              <Sparkles className="w-3.5 h-3.5 text-[#1b7a43]" />
+              <span>Interactive Lifecycle Walkthrough</span>
+            </div>
+            <h2 className="text-2xl sm:text-4xl font-normal text-stone-900 font-editorial">
+              How Kureva works, from setup to verified receipt.
+            </h2>
+            <p className="text-xs sm:text-sm text-stone-500 font-light max-w-xl">
+              Click through the 5 steps below to see how easy it is to claim vanity handles, import products from any store, export 9:16 QR story cards, and verify gift claims.
+            </p>
+          </div>
+
+          <ProductMotionFlow />
+        </section>
+
+        {/* Section 2: Live Wishlist Registry Sandbox */}
+        <section className="space-y-6 pt-6 border-t border-stone-200/80">
+          <div className="space-y-2">
+            <div className="inline-flex items-center space-x-2 px-3 py-1 rounded-full bg-stone-100 border border-stone-200 text-stone-800 text-xs font-semibold tracking-wide uppercase">
+              <Gift className="w-3.5 h-3.5 text-[#1b7a43]" />
+              <span>Live Registry Sandbox</span>
+            </div>
+            <h2 className="text-2xl sm:text-3xl font-normal text-stone-900 font-editorial">
+              Maya&apos;s 25th Birthday Registry Sandbox
+            </h2>
+            <p className="text-xs sm:text-sm text-stone-500 font-light max-w-xl">
+              Simulate claiming gifts as a guest with a personal note, or switch to Creator View at the top to review and confirm receipts.
+            </p>
+          </div>
+
+          {/* Wishlist Header Card */}
+          <div className="bg-white rounded-3xl border border-stone-200/90 shadow-md overflow-hidden">
           {/* Cover Banner */}
           <div className="h-44 sm:h-56 bg-gradient-to-r from-emerald-900 via-[#1b7a43] to-teal-800 relative p-6 flex flex-col justify-between">
             <div className="flex justify-between items-start">
@@ -603,6 +637,7 @@ export default function DemoPage() {
             })}
           </div>
         </div>
+        </section>
 
         {/* Bottom CTA Card */}
         <div className="bg-gradient-to-br from-stone-900 via-stone-800 to-emerald-950 text-white rounded-3xl p-8 sm:p-10 shadow-xl relative overflow-hidden text-center space-y-4">

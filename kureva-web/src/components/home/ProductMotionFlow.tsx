@@ -250,10 +250,10 @@ export default function ProductMotionFlow() {
             </div>
 
             <Link
-              href="/demo"
+              href="/register"
               className="inline-flex items-center space-x-1.5 text-xs text-emerald-400 hover:text-emerald-300 font-medium shrink-0 group transition-colors"
             >
-              <span>Try in Live Demo</span>
+              <span>Create Your Free List</span>
               <ArrowRight className="w-3.5 h-3.5 group-hover:translate-x-0.5 transition-transform" />
             </Link>
           </div>

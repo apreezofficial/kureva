@@ -6,7 +6,6 @@ import { useAuth } from "@/lib/auth";
 import MarketingHeader from "@/components/navigation/MarketingHeader";
 import MarketingFooter from "@/components/navigation/MarketingFooter";
 import ScrollTextReveal from "@/components/home/ScrollTextReveal";
-import ProductMotionFlow from "@/components/home/ProductMotionFlow";
 import { 
   ArrowRight, 
   Sparkles, 
@@ -157,9 +156,24 @@ export default function Home() {
             </Link>
           </div>
 
-          {/* Animated Interactive Product Motion Walkthrough */}
-          <div className="pt-10 sm:pt-14">
-            <ProductMotionFlow />
+          {/* Key Feature Trust Highlights */}
+          <div className="pt-6 flex items-center justify-center flex-wrap gap-x-6 gap-y-2 text-xs text-stone-500 font-medium">
+            <span className="flex items-center space-x-1.5">
+              <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
+              <span>1-Click Store Auto-Fill</span>
+            </span>
+            <span className="flex items-center space-x-1.5">
+              <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
+              <span>Zero Duplicate Gifts</span>
+            </span>
+            <span className="flex items-center space-x-1.5">
+              <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
+              <span>9:16 QR Story Cards</span>
+            </span>
+            <span className="flex items-center space-x-1.5">
+              <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
+              <span>Anti-Troll Verification</span>
+            </span>
           </div>
         </div>
       </section>

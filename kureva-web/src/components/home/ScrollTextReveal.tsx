@@ -12,38 +12,47 @@ export default function ScrollTextReveal() {
   const sectionRef = useRef<HTMLElement>(null);
   const [scrollProgress, setScrollProgress] = useState(0);
 
-  // Punchy, concise manifesto tokens
+  // Bold, impactful manifesto phrases
   const phrases: WordToken[][] = [
     [
       { text: "We" },
       { text: "believe" },
-      { text: "gifting" },
-      { text: "should" },
-      { text: "be" },
+      { text: "gifting", isHighlight: true },
+      { text: "should", isHighlight: true },
+      { text: "be", isHighlight: true },
       { text: "thoughtful", isHighlight: true },
       { text: "and" },
-      { text: "effortless.", isHighlight: true },
+      { text: "stand" },
+      { text: "up" },
+      { text: "for" },
+      { text: "what's" },
+      { text: "right." },
     ],
     [
-      { text: "No" },
-      { text: "awkward" },
-      { text: "texts." },
-      { text: "No" },
-      { text: "duplicate" },
-      { text: "gifts." },
-    ],
-    [
-      { text: "Collect" },
+      { text: "Our" },
+      { text: "goal" },
+      { text: "is" },
+      { text: "to" },
+      { text: "provide" },
+      { text: "complete", isHighlight: true },
+      { text: "freedom", isHighlight: true },
+      { text: "to" },
+      { text: "collect" },
       { text: "what" },
       { text: "you" },
       { text: "love" },
       { text: "from" },
-      { text: "any", isHighlight: true },
-      { text: "store", isHighlight: true },
-      { text: "worldwide." },
+      { text: "any" },
+      { text: "store." },
     ],
     [
-      { text: "Share" },
+      { text: "No" },
+      { text: "duplicate", isHighlight: true },
+      { text: "gifts.", isHighlight: true },
+      { text: "No" },
+      { text: "awkward" },
+      { text: "guessing." },
+      { text: "Curate" },
       { text: "with" },
       { text: "dignity." },
       { text: "Receive", isHighlight: true },
@@ -69,9 +78,9 @@ export default function ScrollTextReveal() {
       const rect = sectionRef.current.getBoundingClientRect();
       const windowHeight = window.innerHeight;
 
-      // Start illuminating when top enters lower half (75%), finish when near top (20%)
+      // Start illuminating as it scrolls into viewport and finish naturally
       const startPoint = windowHeight * 0.85;
-      const endPoint = windowHeight * 0.25;
+      const endPoint = windowHeight * 0.15;
 
       const progress = Math.min(
         Math.max((startPoint - rect.top) / (startPoint - endPoint), 0),
@@ -88,35 +97,37 @@ export default function ScrollTextReveal() {
   return (
     <section 
       ref={sectionRef} 
-      className="py-20 md:py-32 px-6 bg-[#fbfbf9] border-y border-stone-200/80 transition-colors"
+      className="py-20 md:py-32 px-6 sm:px-10 bg-[#faf8f0] border-y border-stone-200/80 transition-colors"
     >
-      <div className="max-w-4xl mx-auto space-y-6">
-        {/* Eyebrow badge */}
-        <div className="inline-flex items-center space-x-2 px-3.5 py-1 rounded-full bg-white border border-stone-200 text-stone-700 text-xs font-mono font-medium tracking-wide uppercase shadow-2xs">
-          <Sparkles className="w-3.5 h-3.5 text-emerald-600" />
-          <span>The Kureva Manifesto</span>
+      <div className="max-w-5xl mx-auto space-y-8">
+        {/* Top Center Pill Badge */}
+        <div className="flex justify-center">
+          <div className="inline-flex items-center space-x-2 px-4 py-1.5 rounded-full bg-[#f0eee4] border border-[#e5e2d6] text-stone-800 text-xs font-bold tracking-wide">
+            <Sparkles className="w-3.5 h-3.5 text-stone-900" />
+            <span>Our Purpose</span>
+          </div>
         </div>
 
-        {/* Large Editorial Reveal Paragraph */}
-        <div className="text-3xl sm:text-5xl md:text-6xl font-normal font-editorial tracking-tight leading-[1.28] md:leading-[1.22] text-stone-900">
+        {/* Large Bold Editorial Reveal Paragraph */}
+        <div className="text-3xl sm:text-5xl md:text-6xl lg:text-[4rem] font-bold font-sans tracking-[-0.03em] leading-[1.12] sm:leading-[1.14] text-stone-900 text-left">
           {allWords.map(({ token, index }) => {
             const wordStart = index / totalWords;
             const isWordActive = scrollProgress >= wordStart;
             const isHighlightActive =
-              token.isHighlight && scrollProgress >= (index + 0.3) / totalWords;
+              token.isHighlight && scrollProgress >= (index + 0.2) / totalWords;
 
             return (
               <span
                 key={index}
-                className="inline-block mr-[0.28em] mb-[0.1em] select-none"
+                className="inline-block mr-[0.26em] mb-[0.06em] select-none"
               >
                 <span
-                  className={`inline-block px-1.5 py-0.5 rounded-md transition-all duration-300 ${
+                  className={`inline-block px-1 py-0 rounded-[2px] transition-all duration-200 ${
                     isHighlightActive
-                      ? "bg-[#d4f932] text-stone-950 font-medium scale-102"
+                      ? "bg-[#d4f932] text-black font-bold"
                       : isWordActive
-                      ? "text-stone-900 font-normal opacity-100"
-                      : "text-stone-300 font-normal opacity-50"
+                      ? "text-stone-950 font-bold opacity-100"
+                      : "text-stone-300 font-bold opacity-60"
                   }`}
                 >
                   {token.text}

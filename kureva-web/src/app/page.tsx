@@ -312,58 +312,6 @@ export default function Home() {
         </div>
       </section>
 
-      {/* 3-Step Quick Value Grid */}
-      <section className="border-y border-stone-200 bg-white py-14 px-6">
-        <div className="max-w-5xl mx-auto space-y-8">
-          <div className="text-center space-y-2">
-            <span className="text-xs font-mono font-bold uppercase tracking-widest text-emerald-700">
-              Simple 3-Step Flow
-            </span>
-            <h2 className="text-2xl sm:text-3xl font-normal text-stone-900 font-editorial">
-              How you get the gifts you actually want.
-            </h2>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-            <div className="p-6 rounded-2xl bg-[#fafaf9] border border-stone-200/80 space-y-3">
-              <div className="w-9 h-9 rounded-xl bg-emerald-100/70 text-emerald-800 flex items-center justify-center font-bold text-xs font-mono">
-                01
-              </div>
-              <h3 className="text-base font-semibold text-stone-900 font-editorial">
-                Paste Any Store Link
-              </h3>
-              <p className="text-xs text-stone-600 font-light leading-relaxed">
-                Add products from Jumia, Amazon, ASOS, Zara, or Apple. We pull the title, price, and photo automatically.
-              </p>
-            </div>
-
-            <div className="p-6 rounded-2xl bg-[#fafaf9] border border-stone-200/80 space-y-3">
-              <div className="w-9 h-9 rounded-xl bg-emerald-100/70 text-emerald-800 flex items-center justify-center font-bold text-xs font-mono">
-                02
-              </div>
-              <h3 className="text-base font-semibold text-stone-900 font-editorial">
-                Share on WhatsApp & IG
-              </h3>
-              <p className="text-xs text-stone-600 font-light leading-relaxed">
-                Export 9:16 story cards with embedded QR codes. Friends open your registry without needing an app.
-              </p>
-            </div>
-
-            <div className="p-6 rounded-2xl bg-[#fafaf9] border border-stone-200/80 space-y-3">
-              <div className="w-9 h-9 rounded-xl bg-emerald-100/70 text-emerald-800 flex items-center justify-center font-bold text-xs font-mono">
-                03
-              </div>
-              <h3 className="text-base font-semibold text-stone-900 font-editorial">
-                Zero Duplicate Gifts
-              </h3>
-              <p className="text-xs text-stone-600 font-light leading-relaxed">
-                Guests claim what they buy and leave surprise notes. You verify receipt in your private dashboard.
-              </p>
-            </div>
-          </div>
-        </div>
-      </section>
-
       {/* On-Scroll Word Illumination & Highlighter Section */}
       <ScrollTextReveal />
 

@@ -6,14 +6,13 @@ import { Sparkles } from "lucide-react";
 interface WordToken {
   text: string;
   isHighlight?: boolean;
-  highlightClass?: string;
 }
 
 export default function ScrollTextReveal() {
-  const containerRef = useRef<HTMLDivElement>(null);
+  const sectionRef = useRef<HTMLElement>(null);
   const [scrollProgress, setScrollProgress] = useState(0);
 
-  // Content tokens designed for Kureva
+  // Punchy, concise manifesto tokens
   const phrases: WordToken[][] = [
     [
       { text: "We" },
@@ -28,35 +27,24 @@ export default function ScrollTextReveal() {
     [
       { text: "No" },
       { text: "awkward" },
-      { text: "group" },
-      { text: "chats." },
+      { text: "texts." },
       { text: "No" },
       { text: "duplicate" },
       { text: "gifts." },
     ],
     [
-      { text: "Our" },
-      { text: "goal" },
-      { text: "is" },
-      { text: "to" },
-      { text: "give" },
-      { text: "you" },
-      { text: "complete", isHighlight: true },
-      { text: "freedom", isHighlight: true },
-      { text: "to" },
-      { text: "collect" },
-      { text: "the" },
-      { text: "things" },
+      { text: "Collect" },
+      { text: "what" },
       { text: "you" },
       { text: "love" },
       { text: "from" },
-      { text: "any" },
-      { text: "store." },
+      { text: "any", isHighlight: true },
+      { text: "store", isHighlight: true },
+      { text: "worldwide." },
     ],
     [
-      { text: "Curate" },
+      { text: "Share" },
       { text: "with" },
-      { text: "quiet" },
       { text: "dignity." },
       { text: "Receive", isHighlight: true },
       { text: "what", isHighlight: true },
@@ -65,7 +53,7 @@ export default function ScrollTextReveal() {
     ],
   ];
 
-  // Flatten words to assign sequential threshold ranges
+  // Flatten words for progressive illumination
   const allWords: { token: WordToken; index: number }[] = [];
   phrases.forEach((phrase) => {
     phrase.forEach((token) => {
@@ -77,16 +65,18 @@ export default function ScrollTextReveal() {
 
   useEffect(() => {
     const handleScroll = () => {
-      if (!containerRef.current) return;
-      const rect = containerRef.current.getBoundingClientRect();
+      if (!sectionRef.current) return;
+      const rect = sectionRef.current.getBoundingClientRect();
       const windowHeight = window.innerHeight;
 
-      // Start calculating when container enters the middle of the screen
-      const totalScrollable = rect.height - windowHeight;
-      if (totalScrollable <= 0) return;
+      // Start illuminating when top enters lower half (75%), finish when near top (20%)
+      const startPoint = windowHeight * 0.85;
+      const endPoint = windowHeight * 0.25;
 
-      const currentScroll = -rect.top;
-      const progress = Math.min(Math.max(currentScroll / totalScrollable, 0), 1);
+      const progress = Math.min(
+        Math.max((startPoint - rect.top) / (startPoint - endPoint), 0),
+        1
+      );
       setScrollProgress(progress);
     };
 
@@ -96,59 +86,44 @@ export default function ScrollTextReveal() {
   }, []);
 
   return (
-    <section ref={containerRef} className="relative min-h-[160vh] md:min-h-[190vh] bg-[#fbfbf9] px-6">
-      {/* Sticky centered viewport container */}
-      <div className="sticky top-20 md:top-28 max-w-5xl mx-auto py-12 md:py-20 flex flex-col justify-center min-h-[60vh]">
-        <div className="space-y-6">
-          {/* Eyebrow badge */}
-          <div className="inline-flex items-center space-x-2 px-3.5 py-1 rounded-full bg-stone-100 border border-stone-200 text-stone-700 text-xs font-mono font-medium tracking-wide uppercase w-fit">
-            <Sparkles className="w-3.5 h-3.5 text-emerald-600" />
-            <span>The Kureva Manifesto</span>
-          </div>
+    <section 
+      ref={sectionRef} 
+      className="py-20 md:py-32 px-6 bg-[#fbfbf9] border-y border-stone-200/80 transition-colors"
+    >
+      <div className="max-w-4xl mx-auto space-y-6">
+        {/* Eyebrow badge */}
+        <div className="inline-flex items-center space-x-2 px-3.5 py-1 rounded-full bg-white border border-stone-200 text-stone-700 text-xs font-mono font-medium tracking-wide uppercase shadow-2xs">
+          <Sparkles className="w-3.5 h-3.5 text-emerald-600" />
+          <span>The Kureva Manifesto</span>
+        </div>
 
-          {/* Large Editorial Reveal Paragraph */}
-          <div className="text-3xl sm:text-5xl md:text-6xl font-normal font-editorial tracking-tight leading-[1.28] md:leading-[1.24] text-stone-900">
-            {allWords.map(({ token, index }) => {
-              // Word activation progress
-              const wordStart = index / totalWords;
-              const wordEnd = (index + 1) / totalWords;
-              const isWordActive = scrollProgress >= wordStart;
+        {/* Large Editorial Reveal Paragraph */}
+        <div className="text-3xl sm:text-5xl md:text-6xl font-normal font-editorial tracking-tight leading-[1.28] md:leading-[1.22] text-stone-900">
+          {allWords.map(({ token, index }) => {
+            const wordStart = index / totalWords;
+            const isWordActive = scrollProgress >= wordStart;
+            const isHighlightActive =
+              token.isHighlight && scrollProgress >= (index + 0.3) / totalWords;
 
-              // Highlighter activation progress (slightly delayed for tactile effect)
-              const isHighlightActive =
-                token.isHighlight && scrollProgress >= (index + 0.5) / totalWords;
-
-              return (
+            return (
+              <span
+                key={index}
+                className="inline-block mr-[0.28em] mb-[0.1em] select-none"
+              >
                 <span
-                  key={index}
-                  className="inline-block mr-[0.28em] mb-[0.1em] transition-all duration-300 select-none"
+                  className={`inline-block px-1.5 py-0.5 rounded-md transition-all duration-300 ${
+                    isHighlightActive
+                      ? "bg-[#d4f932] text-stone-950 font-medium scale-102"
+                      : isWordActive
+                      ? "text-stone-900 font-normal opacity-100"
+                      : "text-stone-300 font-normal opacity-50"
+                  }`}
                 >
-                  <span
-                    className={`inline-block px-1 py-0.5 rounded-md transition-all duration-300 ${
-                      isHighlightActive
-                        ? "bg-[#d4f932] text-stone-950 font-medium shadow-2xs scale-102"
-                        : isWordActive
-                        ? "text-stone-900 font-normal"
-                        : "text-stone-300/80 font-normal"
-                    }`}
-                  >
-                    {token.text}
-                  </span>
+                  {token.text}
                 </span>
-              );
-            })}
-          </div>
-
-          {/* Subtle scroll indicator guide */}
-          <div className="pt-6 flex items-center space-x-3 text-xs font-mono text-stone-400">
-            <div className="w-24 h-1 bg-stone-200 rounded-full overflow-hidden">
-              <div
-                className="h-full bg-emerald-600 transition-all duration-100"
-                style={{ width: `${Math.round(scrollProgress * 100)}%` }}
-              />
-            </div>
-            <span>Scroll to read • {Math.round(scrollProgress * 100)}%</span>
-          </div>
+              </span>
+            );
+          })}
         </div>
       </div>
     </section>

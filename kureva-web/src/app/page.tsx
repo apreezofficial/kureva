@@ -6,6 +6,7 @@ import { useAuth } from "@/lib/auth";
 import MarketingHeader from "@/components/navigation/MarketingHeader";
 import MarketingFooter from "@/components/navigation/MarketingFooter";
 import ScrollTextReveal from "@/components/home/ScrollTextReveal";
+import ProductMotionFlow from "@/components/home/ProductMotionFlow";
 import { 
   ArrowRight, 
   Sparkles, 
@@ -25,38 +26,6 @@ import {
 
 export default function Home() {
   const { user } = useAuth();
-  const [claimedItem, setClaimedItem] = useState<number | null>(null);
-
-  const showcaseWishes = [
-    {
-      id: 1,
-      title: "Sony WH-1000XM5 Wireless Noise Canceling",
-      price: "₦ 450,000",
-      store: "AMAZON",
-      tag: "🔥 Most Wanted",
-      status: "available",
-      image: "https://images.unsplash.com/photo-1505740420928-5e560c06d30e?w=500&auto=format&fit=crop&q=80",
-    },
-    {
-      id: 2,
-      title: "Le Labo Santal 33 Eau de Parfum (50ml)",
-      price: "₦ 195,000",
-      store: "SEPHORA",
-      tag: "Really Loved",
-      status: "verified",
-      gifter: "Sophia (Verified Receipt)",
-      image: "https://images.unsplash.com/photo-1592945403244-b3fbafd7f539?w=500&auto=format&fit=crop&q=80",
-    },
-    {
-      id: 3,
-      title: "Fujifilm Instax Mini Evo Hybrid Camera",
-      price: "₦ 175,000",
-      store: "JUMIA",
-      tag: "Nice To Have",
-      status: "available",
-      image: "https://images.unsplash.com/photo-1526170375885-4d8ecf77b99f?w=500&auto=format&fit=crop&q=80",
-    },
-  ];
 
   const sections = [
     {
@@ -143,19 +112,14 @@ export default function Home() {
       {/* Hero Section */}
       <section className="relative overflow-hidden pt-12 pb-16 md:pt-20 md:pb-24 px-6 text-center">
         <div className="max-w-4xl mx-auto space-y-6">
-          {/* Occasion / Use-Case Badges Pill */}
-          <div className="inline-flex items-center flex-wrap sm:flex-nowrap justify-center gap-1.5 px-3.5 sm:px-4 py-1.5 rounded-full bg-white border border-stone-200/90 text-stone-700 text-xs font-medium shadow-2xs">
-            <span className="font-semibold text-emerald-800 shrink-0">Perfect for:</span>
+          {/* Occasion / Use-Case Badges Pill - Strictly Single-Line on Mobile & Desktop */}
+          <div className="inline-flex items-center justify-center gap-1.5 sm:gap-2 px-3.5 sm:px-4 py-1.5 rounded-full bg-white border border-stone-200/90 text-stone-700 text-[11px] sm:text-xs font-medium shadow-2xs whitespace-nowrap">
+            <span className="font-semibold text-emerald-800">Perfect for:</span>
             <span>🎂 Birthdays</span>
             <span className="text-stone-300">•</span>
             <span>💍 Weddings</span>
-            <span className="text-stone-300 hidden sm:inline">•</span>
-            <span className="hidden sm:inline">🍼 Baby Showers</span>
             <span className="text-stone-300">•</span>
-            <span>🎄 Holidays</span>
-            <span className="text-stone-300 hidden md:inline">•</span>
-            <span className="hidden md:inline">✨ Everyday Wishes</span>
-            <span className="sm:hidden text-stone-500 font-normal">& more</span>
+            <span>✨ All Occasions</span>
           </div>
 
           {/* Main Editorial Headline */}
@@ -193,110 +157,9 @@ export default function Home() {
             </Link>
           </div>
 
-          {/* Realistic Live Registry Preview Mockup */}
-          <div className="pt-12 max-w-3xl mx-auto text-left">
-            <div className="bg-white rounded-3xl border border-stone-200/90 shadow-xl overflow-hidden">
-              {/* Registry Header Bar */}
-              <div className="p-6 sm:p-8 bg-[#fafaf9] border-b border-stone-200/80 flex flex-col sm:flex-row justify-between sm:items-center gap-4">
-                <div className="space-y-1">
-                  <div className="flex items-center space-x-2">
-                    <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse" />
-                    <span className="text-[11px] font-mono font-bold uppercase tracking-wider text-emerald-800 bg-emerald-50 px-2.5 py-0.5 rounded-full border border-emerald-200/70">
-                      Live Gift Registry Demo
-                    </span>
-                  </div>
-                  <h3 className="text-2xl font-normal font-editorial text-stone-900">
-                    Maya&apos;s 25th Birthday Wishlist
-                  </h3>
-                  <div className="text-xs text-stone-500 flex items-center space-x-2">
-                    <span>Curated by @maya</span>
-                    <span>•</span>
-                    <span className="text-emerald-700 font-semibold">2 of 3 gifts claimed (67%)</span>
-                  </div>
-                </div>
-
-                <div className="flex items-center space-x-2 shrink-0">
-                  <Link
-                    href="/demo"
-                    className="px-4 py-2 rounded-xl bg-[#1b7a43] text-white text-xs font-semibold shadow-2xs hover:bg-[#145d33] transition-colors flex items-center space-x-1.5"
-                  >
-                    <QrCode className="w-3.5 h-3.5" />
-                    <span>Story Card Studio</span>
-                  </Link>
-                </div>
-              </div>
-
-              {/* Wish Items Grid */}
-              <div className="p-6 sm:p-8 grid grid-cols-1 sm:grid-cols-3 gap-6">
-                {showcaseWishes.map((item) => {
-                  const isClaimed = claimedItem === item.id || item.status === "verified";
-                  return (
-                    <div
-                      key={item.id}
-                      className="rounded-2xl border border-stone-200/80 bg-white overflow-hidden shadow-2xs flex flex-col justify-between group hover:border-emerald-400/60 transition-all"
-                    >
-                      <div>
-                        {/* Image Frame */}
-                        <div className="relative aspect-square w-full bg-stone-100 overflow-hidden">
-                          {/* eslint-disable-next-line @next/next/no-img-element */}
-                          <img
-                            src={item.image}
-                            alt={item.title}
-                            className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
-                          />
-                          <span className="absolute top-2 left-2 text-[10px] font-bold uppercase tracking-wider bg-white/90 backdrop-blur-xs text-stone-800 px-2 py-0.5 rounded-md shadow-2xs">
-                            {item.store}
-                          </span>
-                        </div>
-
-                        {/* Content */}
-                        <div className="p-4 space-y-1.5">
-                          <span className="text-[10px] font-semibold text-emerald-800 bg-emerald-50 px-2 py-0.5 rounded-md inline-block">
-                            {item.tag}
-                          </span>
-                          <h4 className="text-xs font-semibold text-stone-900 line-clamp-2 leading-tight">
-                            {item.title}
-                          </h4>
-                          <div className="text-xs font-bold text-stone-900 pt-0.5 font-mono">
-                            {item.price}
-                          </div>
-                        </div>
-                      </div>
-
-                      {/* Action */}
-                      <div className="p-4 pt-0">
-                        {isClaimed ? (
-                          <div className="w-full py-2 px-3 rounded-xl bg-emerald-50 border border-emerald-200 text-emerald-900 text-[11px] font-semibold flex items-center justify-center space-x-1">
-                            <Check className="w-3.5 h-3.5 text-emerald-700" />
-                            <span>{item.gifter || "Claimed • Verified ✓"}</span>
-                          </div>
-                        ) : (
-                          <button
-                            onClick={() => setClaimedItem(item.id)}
-                            className="w-full py-2 px-3 rounded-xl bg-stone-900 hover:bg-[#1b7a43] text-white text-[11px] font-semibold transition-colors flex items-center justify-center space-x-1 shadow-2xs active:scale-98"
-                          >
-                            <Gift className="w-3.5 h-3.5" />
-                            <span>Claim This Gift</span>
-                          </button>
-                        )}
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
-
-              {/* Bottom Card Bar linking to full demo */}
-              <div className="px-6 py-3.5 bg-stone-50 border-t border-stone-200/80 flex items-center justify-between text-xs">
-                <span className="text-stone-500">Want to test full interactive claiming &amp; creator receipt verification?</span>
-                <Link
-                  href="/demo"
-                  className="font-semibold text-[#1b7a43] hover:underline flex items-center space-x-1"
-                >
-                  <span>Open Full Demo Experience</span>
-                  <ArrowRight className="w-3.5 h-3.5" />
-                </Link>
-              </div>
-            </div>
+          {/* Animated Interactive Product Motion Walkthrough */}
+          <div className="pt-10 sm:pt-14">
+            <ProductMotionFlow />
           </div>
         </div>
       </section>

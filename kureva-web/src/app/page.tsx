@@ -129,7 +129,7 @@ export default function Home() {
 
           {/* Crystal-Clear Subtitle */}
           <p className="text-base sm:text-lg text-stone-600 max-w-2xl mx-auto leading-relaxed font-light">
-            Collect wishes from any store in seconds, export high-res story cards with QR codes for WhatsApp & Instagram, and let friends claim gifts with zero duplicate surprises.
+            Add gifts from any online store in seconds, export high-res story cards with QR codes for WhatsApp &amp; Instagram, and let friends claim gifts with zero duplicate surprises.
           </p>
 
           {/* Action Buttons */}

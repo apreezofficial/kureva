@@ -179,8 +179,15 @@ export default function Home() {
               <ArrowRight className="w-4 h-4" />
             </Link>
             <Link
+              href="/demo"
+              className="w-full sm:w-auto px-7 py-3.5 border border-emerald-700/30 hover:border-emerald-700/60 bg-emerald-50/60 hover:bg-emerald-50 text-emerald-950 font-semibold rounded-2xl text-sm transition-all shadow-xs flex items-center justify-center space-x-2"
+            >
+              <Sparkles className="w-4 h-4 text-[#1b7a43]" />
+              <span>Explore Live Demo</span>
+            </Link>
+            <Link
               href="/how-it-works"
-              className="w-full sm:w-auto px-7 py-3.5 border border-stone-300 hover:border-stone-400 bg-white text-stone-800 font-semibold rounded-2xl text-sm transition-all shadow-xs"
+              className="w-full sm:w-auto px-6 py-3.5 border border-stone-300 hover:border-stone-400 bg-white text-stone-800 font-semibold rounded-2xl text-sm transition-all shadow-xs text-center"
             >
               How It Works
             </Link>
@@ -195,7 +202,7 @@ export default function Home() {
                   <div className="flex items-center space-x-2">
                     <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse" />
                     <span className="text-[11px] font-mono font-bold uppercase tracking-wider text-emerald-800 bg-emerald-50 px-2.5 py-0.5 rounded-full border border-emerald-200/70">
-                      Live Gift Registry
+                      Live Gift Registry Demo
                     </span>
                   </div>
                   <h3 className="text-2xl font-normal font-editorial text-stone-900">
@@ -210,11 +217,11 @@ export default function Home() {
 
                 <div className="flex items-center space-x-2 shrink-0">
                   <Link
-                    href="/register"
+                    href="/demo"
                     className="px-4 py-2 rounded-xl bg-[#1b7a43] text-white text-xs font-semibold shadow-2xs hover:bg-[#145d33] transition-colors flex items-center space-x-1.5"
                   >
                     <QrCode className="w-3.5 h-3.5" />
-                    <span>Story Card</span>
+                    <span>Story Card Studio</span>
                   </Link>
                 </div>
               </div>
@@ -276,6 +283,18 @@ export default function Home() {
                     </div>
                   );
                 })}
+              </div>
+
+              {/* Bottom Card Bar linking to full demo */}
+              <div className="px-6 py-3.5 bg-stone-50 border-t border-stone-200/80 flex items-center justify-between text-xs">
+                <span className="text-stone-500">Want to test full interactive claiming &amp; creator receipt verification?</span>
+                <Link
+                  href="/demo"
+                  className="font-semibold text-[#1b7a43] hover:underline flex items-center space-x-1"
+                >
+                  <span>Open Full Demo Experience</span>
+                  <ArrowRight className="w-3.5 h-3.5" />
+                </Link>
               </div>
             </div>
           </div>

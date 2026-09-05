@@ -12,6 +12,7 @@ export default function MarketingHeader() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   const navLinks = [
+    { label: "Live Demo", href: "/demo" },
     { label: "How It Works", href: "/how-it-works" },
     { label: "About", href: "/about" },
     { label: "FAQ", href: "/faq" },

@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useAuth } from "@/lib/auth";
 import MarketingHeader from "@/components/navigation/MarketingHeader";
 import MarketingFooter from "@/components/navigation/MarketingFooter";
+import ScrollTextReveal from "@/components/home/ScrollTextReveal";
 import { 
   ArrowRight, 
   Sparkles, 
@@ -362,6 +363,9 @@ export default function Home() {
           </div>
         </div>
       </section>
+
+      {/* On-Scroll Word Illumination & Highlighter Section */}
+      <ScrollTextReveal />
 
       {/* Zigzag Feature Sections (Top 5 Curated Screenshots) */}
       <section className="py-16 md:py-24 space-y-24 md:space-y-36 max-w-6xl mx-auto px-6">

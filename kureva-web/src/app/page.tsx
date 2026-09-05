@@ -144,17 +144,18 @@ export default function Home() {
       <section className="relative overflow-hidden pt-12 pb-16 md:pt-20 md:pb-24 px-6 text-center">
         <div className="max-w-4xl mx-auto space-y-6">
           {/* Occasion / Use-Case Badges Pill */}
-          <div className="inline-flex items-center flex-wrap justify-center gap-1.5 px-4 py-1.5 rounded-full bg-white border border-stone-200/90 text-stone-700 text-xs font-medium shadow-2xs">
-            <span className="font-semibold text-emerald-800">Perfect for:</span>
+          <div className="inline-flex items-center flex-wrap sm:flex-nowrap justify-center gap-1.5 px-3.5 sm:px-4 py-1.5 rounded-full bg-white border border-stone-200/90 text-stone-700 text-xs font-medium shadow-2xs">
+            <span className="font-semibold text-emerald-800 shrink-0">Perfect for:</span>
             <span>🎂 Birthdays</span>
             <span className="text-stone-300">•</span>
             <span>💍 Weddings</span>
-            <span className="text-stone-300">•</span>
-            <span>🍼 Baby Showers</span>
+            <span className="text-stone-300 hidden sm:inline">•</span>
+            <span className="hidden sm:inline">🍼 Baby Showers</span>
             <span className="text-stone-300">•</span>
             <span>🎄 Holidays</span>
-            <span className="text-stone-300">•</span>
-            <span>✨ Everyday Desires</span>
+            <span className="text-stone-300 hidden md:inline">•</span>
+            <span className="hidden md:inline">✨ Everyday Wishes</span>
+            <span className="sm:hidden text-stone-500 font-normal">& more</span>
           </div>
 
           {/* Main Editorial Headline */}

@@ -34,6 +34,11 @@ export default function MarketingFooter() {
             </h4>
             <ul className="space-y-2.5 text-xs sm:text-sm font-light">
               <li>
+                <Link href="/demo" className="hover:text-stone-900 transition-colors font-medium text-emerald-800">
+                  Live Interactive Demo
+                </Link>
+              </li>
+              <li>
                 <Link href="/how-it-works" className="hover:text-stone-900 transition-colors">
                   How It Works
                 </Link>

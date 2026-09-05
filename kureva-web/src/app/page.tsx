@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import Link from "next/link";
 import { useAuth } from "@/lib/auth";
 import MarketingHeader from "@/components/navigation/MarketingHeader";
@@ -13,11 +14,43 @@ import {
   ShieldCheck,
   Link2,
   QrCode,
-  Palette
+  Palette,
+  ShoppingBag,
+  ExternalLink,
+  Smartphone,
+  Eye,
+  Check,
+  Layers,
+  Heart
 } from "lucide-react";
 
 export default function Home() {
   const { user } = useAuth();
+  const [activeHeroTab, setActiveHeroTab] = useState<0 | 1 | 2>(0);
+
+  const heroTabs = [
+    {
+      id: 0,
+      label: "1. Paste Store Link",
+      icon: Link2,
+      headline: "Paste links from any store. We auto-fill details.",
+      previewType: "import",
+    },
+    {
+      id: 1,
+      label: "2. Social Story Studio",
+      icon: QrCode,
+      headline: "Export story graphics with QR codes for WhatsApp & IG.",
+      previewType: "story",
+    },
+    {
+      id: 2,
+      label: "3. Verified Gifting",
+      icon: ShieldCheck,
+      headline: "Friends claim gifts. You verify receipt with 0 duplicates.",
+      previewType: "claim",
+    },
+  ];
 
   const sections = [
     {
@@ -102,41 +135,236 @@ export default function Home() {
       <MarketingHeader />
 
       {/* Hero Section */}
-      <section className="relative overflow-hidden pt-16 pb-20 md:pt-24 md:pb-28 text-center px-6">
+      <section className="relative overflow-hidden pt-12 pb-16 md:pt-20 md:pb-24 px-6 text-center">
         <div className="max-w-4xl mx-auto space-y-6">
-          <div className="inline-flex items-center space-x-2 px-3.5 py-1 rounded-full bg-emerald-50 border border-emerald-200/80 text-emerald-800 text-xs font-semibold tracking-wide uppercase">
-            <Sparkles className="w-3.5 h-3.5 text-emerald-600" />
-            <span>Understated Wishlist & Gift Registry</span>
+          {/* Occasion / Use-Case Badges Pill */}
+          <div className="inline-flex items-center flex-wrap justify-center gap-1.5 px-4 py-1.5 rounded-full bg-white border border-stone-200/90 text-stone-700 text-xs font-medium shadow-2xs">
+            <span className="font-semibold text-emerald-800">Perfect for:</span>
+            <span>🎂 Birthdays</span>
+            <span className="text-stone-300">•</span>
+            <span>💍 Weddings</span>
+            <span className="text-stone-300">•</span>
+            <span>🍼 Baby Showers</span>
+            <span className="text-stone-300">•</span>
+            <span>🎄 Holidays</span>
+            <span className="text-stone-300">•</span>
+            <span>✨ Everyday Desires</span>
           </div>
 
+          {/* Main Unmistakable Headline */}
           <h1 className="text-4xl sm:text-6xl md:text-7xl font-normal tracking-tight text-stone-900 font-editorial leading-[1.08]">
-            Wish for it. Share it.<br />Make it yours.
+            Create your dream wishlist.<br />
+            <span className="text-[#1b7a43] italic">Get the gifts you actually love.</span>
           </h1>
 
+          {/* Crystal-Clear Value Proposition Subheading */}
           <p className="text-base sm:text-lg text-stone-600 max-w-2xl mx-auto leading-relaxed font-light">
-            Kureva is the modern wishlist platform for collecting what you love, auto-importing products from any store, designing social story graphics, and sharing verified registries with friends.
+            Paste links from any online store (Jumia, Amazon, Zara & Apple). Auto-generate high-res story cards with scannable QR codes for WhatsApp & Instagram, and let friends claim gifts with zero duplicate surprises.
           </p>
 
-          <div className="flex flex-col sm:flex-row items-center justify-center gap-3.5 pt-4">
+          {/* Primary Action Buttons */}
+          <div className="flex flex-col sm:flex-row items-center justify-center gap-3.5 pt-2">
             <Link
               href={user ? "/dashboard/wishlists" : "/register"}
               className="w-full sm:w-auto px-8 py-3.5 bg-[#1b7a43] hover:bg-[#145d33] text-white font-semibold rounded-2xl text-sm shadow-md flex items-center justify-center space-x-2 transition-all active:scale-98"
             >
-              <span>Start your free wishlist</span>
+              <span>Create your free wishlist</span>
               <ArrowRight className="w-4 h-4" />
             </Link>
             <Link
-              href="/login"
+              href="/how-it-works"
               className="w-full sm:w-auto px-7 py-3.5 border border-stone-300 hover:border-stone-400 bg-white text-stone-800 font-semibold rounded-2xl text-sm transition-all shadow-xs"
             >
-              Sign in to your account
+              See how it works (3 steps)
             </Link>
+          </div>
+
+          {/* Visual Interactive Hero Preview Workflow */}
+          <div className="pt-10 max-w-2xl mx-auto">
+            <div className="bg-white rounded-3xl border border-stone-200/90 shadow-xl overflow-hidden text-left">
+              {/* Interactive Step Switcher Tabs */}
+              <div className="grid grid-cols-3 border-b border-stone-200 bg-stone-50/70 p-1.5 gap-1 text-center">
+                {heroTabs.map((tab) => {
+                  const Icon = tab.icon;
+                  const isActive = activeHeroTab === tab.id;
+                  return (
+                    <button
+                      key={tab.id}
+                      onClick={() => setActiveHeroTab(tab.id as 0 | 1 | 2)}
+                      className={`flex items-center justify-center space-x-1.5 py-2.5 px-2 rounded-xl text-xs font-semibold transition-all ${
+                        isActive
+                          ? "bg-white text-emerald-800 shadow-xs border border-stone-200/60"
+                          : "text-stone-500 hover:text-stone-800 hover:bg-stone-100"
+                      }`}
+                    >
+                      <Icon className="w-3.5 h-3.5 shrink-0 text-emerald-700" />
+                      <span className="truncate">{tab.label}</span>
+                    </button>
+                  );
+                })}
+              </div>
+
+              {/* Dynamic Preview Canvas */}
+              <div className="p-6 sm:p-8 bg-gradient-to-b from-stone-50/40 to-white">
+                {/* Tab 0: Link Auto-Import Simulation */}
+                {activeHeroTab === 0 && (
+                  <div className="space-y-4 animate-in fade-in-50 duration-200">
+                    <div className="flex items-center space-x-2 text-xs font-mono text-emerald-800 bg-emerald-50 px-3 py-1 rounded-full w-fit">
+                      <Link2 className="w-3.5 h-3.5" />
+                      <span>Instant Link Scraping Engine</span>
+                    </div>
+
+                    <div className="bg-white p-3.5 rounded-2xl border border-stone-200 shadow-2xs flex items-center space-x-3">
+                      <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse shrink-0" />
+                      <span className="text-xs text-stone-500 truncate font-mono">
+                        https://www.jumia.com.ng/classic-baggy-denim-jeans...
+                      </span>
+                      <span className="text-[11px] font-bold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-md shrink-0">
+                        Auto-Filled ✓
+                      </span>
+                    </div>
+
+                    <div className="p-4 rounded-2xl bg-stone-50 border border-stone-200/80 flex items-center justify-between gap-4">
+                      <div className="space-y-1">
+                        <span className="text-[10px] font-bold uppercase tracking-wider text-emerald-700 bg-emerald-100/60 px-2 py-0.5 rounded">
+                          🔥 Most Wanted
+                        </span>
+                        <h4 className="text-sm font-semibold text-stone-900">Classic Baggy Denim Jeans</h4>
+                        <div className="text-xs text-stone-500">₦ 45,000 • Jumia Nigeria</div>
+                      </div>
+                      <span className="text-xs font-semibold text-[#1b7a43] bg-white border border-stone-200 px-3 py-1.5 rounded-xl shadow-2xs shrink-0">
+                        Added to Wishlist
+                      </span>
+                    </div>
+                  </div>
+                )}
+
+                {/* Tab 1: Story Graphic Preview */}
+                {activeHeroTab === 1 && (
+                  <div className="space-y-4 animate-in fade-in-50 duration-200">
+                    <div className="flex items-center space-x-2 text-xs font-mono text-emerald-800 bg-emerald-50 px-3 py-1 rounded-full w-fit">
+                      <QrCode className="w-3.5 h-3.5" />
+                      <span>Pixel-Perfect Story Card Studio</span>
+                    </div>
+
+                    <div className="bg-gradient-to-br from-emerald-900 to-teal-950 text-white p-5 rounded-2xl shadow-md border border-emerald-800 flex items-center justify-between">
+                      <div className="space-y-1.5">
+                        <span className="text-[10px] uppercase tracking-widest text-emerald-300 font-mono">
+                          Official Wishlist Registry
+                        </span>
+                        <div className="text-lg font-editorial text-white">Birthday Wishlist</div>
+                        <div className="text-xs text-emerald-200/80">Curated by @apcodesphere</div>
+                      </div>
+
+                      <div className="w-16 h-16 bg-white rounded-xl p-1.5 shadow-md flex flex-col items-center justify-center shrink-0">
+                        <QrCode className="w-10 h-10 text-stone-900" />
+                        <span className="text-[7px] font-bold text-stone-600 mt-0.5">SCAN ME</span>
+                      </div>
+                    </div>
+
+                    <div className="flex items-center justify-between text-xs text-stone-500 pt-1">
+                      <span>✓ 9:16 Story format (Instagram & WhatsApp)</span>
+                      <span className="font-semibold text-emerald-700">1-Tap .PNG Export</span>
+                    </div>
+                  </div>
+                )}
+
+                {/* Tab 2: Verified Gifting */}
+                {activeHeroTab === 2 && (
+                  <div className="space-y-4 animate-in fade-in-50 duration-200">
+                    <div className="flex items-center space-x-2 text-xs font-mono text-emerald-800 bg-emerald-50 px-3 py-1 rounded-full w-fit">
+                      <ShieldCheck className="w-3.5 h-3.5" />
+                      <span>Anti-Troll & Duplicate Prevention</span>
+                    </div>
+
+                    <div className="p-4 rounded-2xl bg-white border border-emerald-200 shadow-2xs space-y-2.5">
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center space-x-2">
+                          <Gift className="w-4 h-4 text-emerald-700" />
+                          <span className="text-xs font-semibold text-stone-900">Claim from Gifter (David)</span>
+                        </div>
+                        <span className="text-[10px] font-bold uppercase text-amber-700 bg-amber-50 border border-amber-200 px-2 py-0.5 rounded-full">
+                          Pending Verification
+                        </span>
+                      </div>
+                      <p className="text-xs text-stone-600 italic bg-stone-50 p-2.5 rounded-xl border border-stone-100">
+                        &quot;Happy Birthday! Ordered it directly to your address.&quot;
+                      </p>
+                      <div className="flex items-center space-x-2 pt-1">
+                        <span className="text-xs font-semibold px-3 py-1 bg-emerald-700 text-white rounded-lg shadow-2xs">
+                          ✓ Verify & Confirm
+                        </span>
+                        <span className="text-xs font-medium text-stone-500 hover:text-stone-800 px-2">
+                          Decline / Reopen
+                        </span>
+                      </div>
+                    </div>
+
+                    <div className="text-[11px] text-stone-500 text-center">
+                      *Unverified claims remain open to public visitors so prank clicks never lock your gifts.
+                    </div>
+                  </div>
+                )}
+              </div>
+            </div>
           </div>
         </div>
       </section>
 
-      {/* Zigzag Feature Sections (Top 5 Curated) */}
-      <section className="py-12 md:py-20 space-y-24 md:space-y-36 max-w-6xl mx-auto px-6">
+      {/* 3-Step Quick Value Grid */}
+      <section className="border-y border-stone-200 bg-white py-14 px-6">
+        <div className="max-w-5xl mx-auto space-y-8">
+          <div className="text-center space-y-2">
+            <span className="text-xs font-mono font-bold uppercase tracking-widest text-emerald-700">
+              Simple 3-Step Flow
+            </span>
+            <h2 className="text-2xl sm:text-3xl font-normal text-stone-900 font-editorial">
+              How you get the gifts you actually want.
+            </h2>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+            <div className="p-6 rounded-2xl bg-[#fafaf9] border border-stone-200/80 space-y-3">
+              <div className="w-9 h-9 rounded-xl bg-emerald-100/70 text-emerald-800 flex items-center justify-center font-bold text-xs font-mono">
+                01
+              </div>
+              <h3 className="text-base font-semibold text-stone-900 font-editorial">
+                Paste Any Store Link
+              </h3>
+              <p className="text-xs text-stone-600 font-light leading-relaxed">
+                Add products from Jumia, Amazon, ASOS, Zara, or Apple. We pull the title, price, and photo automatically.
+              </p>
+            </div>
+
+            <div className="p-6 rounded-2xl bg-[#fafaf9] border border-stone-200/80 space-y-3">
+              <div className="w-9 h-9 rounded-xl bg-emerald-100/70 text-emerald-800 flex items-center justify-center font-bold text-xs font-mono">
+                02
+              </div>
+              <h3 className="text-base font-semibold text-stone-900 font-editorial">
+                Share on WhatsApp & IG
+              </h3>
+              <p className="text-xs text-stone-600 font-light leading-relaxed">
+                Export 9:16 story cards with embedded QR codes. Friends open your registry without needing an app.
+              </p>
+            </div>
+
+            <div className="p-6 rounded-2xl bg-[#fafaf9] border border-stone-200/80 space-y-3">
+              <div className="w-9 h-9 rounded-xl bg-emerald-100/70 text-emerald-800 flex items-center justify-center font-bold text-xs font-mono">
+                03
+              </div>
+              <h3 className="text-base font-semibold text-stone-900 font-editorial">
+                Zero Duplicate Gifts
+              </h3>
+              <p className="text-xs text-stone-600 font-light leading-relaxed">
+                Guests claim what they buy and leave surprise notes. You verify receipt in your private dashboard.
+              </p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* Zigzag Feature Sections (Top 5 Curated Screenshots) */}
+      <section className="py-16 md:py-24 space-y-24 md:space-y-36 max-w-6xl mx-auto px-6">
         {sections.map((sec) => (
           <div
             key={sec.number}

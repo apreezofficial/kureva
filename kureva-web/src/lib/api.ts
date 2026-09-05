@@ -1,4 +1,4 @@
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "https://unfriendly-hoopoe.outray.app";
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "https://busy-guru.outray.app";
 
 interface RequestOptions extends RequestInit {
   data?: any;

@@ -798,7 +798,7 @@ function wrapText(ctx: CanvasRenderingContext2D, text: string, maxWidth: number,
 function getProxyImageUrl(url: string) {
   if (!url) return "";
   if (url.startsWith("data:")) return url;
-  const apiUrl = process.env.NEXT_PUBLIC_API_URL || "https://unfriendly-hoopoe.outray.app";
+  const apiUrl = process.env.NEXT_PUBLIC_API_URL || "https://busy-guru.outray.app";
   return `${apiUrl}/api/proxy-image?url=${encodeURIComponent(url)}`;
 }
 
